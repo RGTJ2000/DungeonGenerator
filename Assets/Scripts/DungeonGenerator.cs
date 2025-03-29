@@ -90,6 +90,11 @@ public class DungeonGenerator : MonoBehaviour
 
     private int endNodeIndex = 0; //the first empty slot in the array
 
+    private bool loopComplete = false;
+    /*
+     * METHODS BELOW *********************************************************************************
+     */
+
     private void Awake()
     {
         _inputControls = new InputControls();
@@ -105,6 +110,8 @@ public class DungeonGenerator : MonoBehaviour
 
         _inputControls.General.Refresh.started += OnRefresh;
 
+        _inputControls.General.CreateNextNode.started += OnCreateNextNode;
+
     }
 
     private void OnDisable()
@@ -113,6 +120,137 @@ public class DungeonGenerator : MonoBehaviour
 
         _inputControls.General.NodeSize.started -= OnNodeSize;
         _inputControls.General.Refresh.started -= OnRefresh;
+        _inputControls.General.CreateNextNode.started -= OnCreateNextNode;
+    }
+
+    private void Update()
+    {
+
+    }
+
+    void Start()
+    {
+        gridContainer = new GameObject("GridContainer");
+
+        node_array = new NodeData[max_numberOfNodes];
+        endNodeIndex = 0;
+        current_gen = 0;
+
+        gridWidth = grid_halfWidth * 2;
+        gridHeight = grid_halfHeight * 2;
+
+        origin_position = new Vector2(grid_halfWidth, grid_halfHeight);
+
+        cellMatrix = new cellData[gridWidth, gridHeight];
+
+        neutral_hProb = new hallProbability(1, 1, 1, 1);
+        sw_hprob = new hallProbability(1, 3, 3, 1);
+
+        //InitializeGrid();
+
+        //CreateMainPath();
+
+        //InstantiateAllNodes();
+
+        //AddNodesToParentHalls(0);
+
+
+
+        //UpdateGridData();
+
+        //RedrawGrid();
+
+
+
+
+
+
+    }
+
+    private void OnCreateNextNode(InputAction.CallbackContext context)
+    {
+
+        if (endNodeIndex >= mainPath_nodeCount)
+        {
+            DestroyGridObjects();
+            ResetCellMatrix();
+            endNodeIndex = 0;
+
+        }
+        int i = endNodeIndex;
+
+        if (i == 0)
+        {
+            CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
+
+            ExpandNodeAtRandom(i);
+            ReevaluateThisNodePosition(i);
+            SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+
+        }
+        else if (i == mainPath_nodeCount - 1)
+        {
+            AddNodesToParentHalls(i - 1);
+            ExpandNodeAtRandom(i);
+            ReevaluateThisNodePosition(i);
+
+        }
+        else
+        {
+            AddNodesToParentHalls(i - 1);
+            ExpandNodeAtRandom(i);
+            ReevaluateThisNodePosition(i);
+            SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+
+
+        }
+
+        Debug.Log("Node #" + i + " created.");
+
+        InstantiateAllNodes();
+
+
+    }
+
+    private void CreateMainPath()
+    {
+
+        for (int i = 0; i < mainPath_nodeCount; i++)
+        {
+            Debug.Log("Loop iteration:" + i);
+            if (i == 0)
+            {
+                CreateNode(i - 1, Vector2.zero, -1, current_gen);
+
+                ExpandNodeAtRandom(i);
+                ReevaluateThisNodePosition(i);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+
+            }
+            else if (i == mainPath_nodeCount - 1)
+            {
+                AddNodesToParentHalls(i - 1);
+                ExpandNodeAtRandom(i);
+                ReevaluateThisNodePosition(i);
+
+            }
+            else
+            {
+                AddNodesToParentHalls(i - 1);
+                ExpandNodeAtRandom(i);
+                ReevaluateThisNodePosition(i);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+
+
+            }
+
+            InstantiateAllNodes();
+
+        }
+
+        Debug.Log("End Node Index is now " + endNodeIndex);
+
+
     }
 
     private void OnNodeSize(InputAction.CallbackContext context)
@@ -153,89 +291,19 @@ public class DungeonGenerator : MonoBehaviour
         //RedrawGrid();
 
     }
-    void Start()
-    {
-        gridContainer = new GameObject("GridContainer");
 
-        node_array = new NodeData[max_numberOfNodes];
-        endNodeIndex = 0;
-        current_gen = 0;
-
-        gridWidth = grid_halfWidth * 2;
-        gridHeight = grid_halfHeight * 2;
-
-        origin_position = new Vector2(grid_halfWidth, grid_halfHeight);
-
-        cellMatrix = new cellData[gridWidth, gridHeight];
-
-        neutral_hProb = new hallProbability(1, 1, 1, 1);
-        sw_hprob = new hallProbability(1, 3, 3, 1);
-
-        //InitializeGrid();
-
-        CreateMainPath();
-
-        InstantiateAllNodes();
-
-        //AddNodesToParentHalls(0);
-
-
-
-        //UpdateGridData();
-
-        //RedrawGrid();
-
-
-
-
-
-
-    }
-
-    private void CreateMainPath()
-    {
-
-        for (int i = 0; i < mainPath_nodeCount; i++)
-        {
-
-            if (i == 0)
-            {
-                CreateNode(i - 1, Vector2.zero, current_gen);
-
-                ExpandNodeAtRandom(i);
-
-                AddRandomHallsToNode(i, sw_hprob, 1);
-            }
-            else if (i == mainPath_nodeCount - 1)
-            {
-                AddNodesToParentHalls(i - 1);
-                ExpandNodeAtRandom(i);
-
-            }
-            else
-            {
-                AddNodesToParentHalls(i - 1);
-                ExpandNodeAtRandom(i);
-                AddRandomHallsToNode(i, sw_hprob, 1);
-            }
-
-
-
-        }
-        Debug.Log("End Node Index is now " + endNodeIndex);
-
-
-    }
 
     private void ExpandNodeAtRandom(int nodeIndex)
     {
         if (Random.value < room_prob)
         {
+            int minHeight = node_array[nodeIndex].walls_offset.north + node_array[nodeIndex].walls_offset.south + 1;
+            int minWidth = node_array[nodeIndex].walls_offset.east + node_array[nodeIndex].walls_offset.west +1;
             //expand room
-            int height = Random.Range(default_wallsOffset.north + default_wallsOffset.south + 3, max_roomHeight);
-            int width = Random.Range(default_wallsOffset.east+default_wallsOffset.west +3, max_roomWidth);
+            int height = Random.Range(minHeight, max_roomHeight);
+            int width = Random.Range(minWidth, max_roomWidth);
 
-            node_array[nodeIndex].walls_offset = new WallsOffset( height/2, height/2, width/2, width/2 );
+            node_array[nodeIndex].walls_offset = new WallsOffset(height / 2, height / 2, width / 2, width / 2);
         }
 
     }
@@ -245,9 +313,10 @@ public class DungeonGenerator : MonoBehaviour
         DestroyGridObjects();
         ResetCellMatrix();
         endNodeIndex = 0;
-        CreateMainPath();
+        loopComplete = false;
+        //CreateMainPath();
 
-        InstantiateAllNodes();
+        //InstantiateAllNodes();
     }
 
     private void InstantiateAllNodes()
@@ -259,7 +328,7 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-    void AddRandomHallsToNode(int nodeIndex, hallProbability h_prob, int maxHallCheck)
+    void SelectAndAddRandomHallsToNode(int nodeIndex, hallProbability h_prob, int maxHallCheck)
     {
         NodeData nodeData = node_array[nodeIndex];
 
@@ -283,7 +352,7 @@ public class DungeonGenerator : MonoBehaviour
             directionsList.Add("west");
         }
 
-        Debug.Log("Node " + nodeIndex + ": Available directions" + string.Join(", ", directionsList));
+        //Debug.Log("Node " + nodeIndex + ": Available directions" + string.Join(", ", directionsList));
 
         List<string> probPool = new List<string>();
 
@@ -334,38 +403,44 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-
     private void AddHallToNode(int nodeIndex, string direction)
     {
         int length = Random.Range(1, hall_maxLength + 1);
 
-        int maxWidth = hall_maxWidth;
-        /*
+        
+       
         int maxWidth;
-
         switch (direction)
         {
-            case "north":
+
+            case ("north"):
                 maxWidth = node_array[nodeIndex].walls_offset.east + node_array[nodeIndex].walls_offset.west + 1;
+
                 break;
-            case "south":
+            case ("south"):
                 maxWidth = node_array[nodeIndex].walls_offset.east + node_array[nodeIndex].walls_offset.west + 1;
+
                 break;
-            case "east":
+            case ("east"):
                 maxWidth = node_array[nodeIndex].walls_offset.north + node_array[nodeIndex].walls_offset.south + 1;
+
                 break;
-            case "west":
+            case ("west"):
                 maxWidth = node_array[nodeIndex].walls_offset.north + node_array[nodeIndex].walls_offset.south + 1;
+
                 break;
             default:
                 maxWidth = hall_minWidth;
                 break;
 
-
         }
-        */
+        
+        if (maxWidth >= hall_maxWidth)
+        {
+            maxWidth = hall_maxWidth;
+        }
 
-        int width = Random.Range(hall_minWidth, maxWidth + 1);
+        int width = Random.Range(hall_minWidth, maxWidth);
 
         int offset = Random.Range(-(maxWidth - width) / 2, ((maxWidth - width) / 2) + 1);
 
@@ -391,6 +466,8 @@ public class DungeonGenerator : MonoBehaviour
 
 
         }
+
+        Debug.Log("Node " + nodeIndex + ": adding hallway WIDTH=" + width + "(" + maxWidth + ") Offset=" + offset);
     }
 
     void AddNodesToParentHalls(int parent_index)
@@ -409,12 +486,10 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-
-
     private void AddNodeAtHallOffset(int parent_index, Vector2 offset, int hall_index)
     {
 
-        int createdNodeIndex = CreateNode(parent_index, offset, current_gen);
+        int createdNodeIndex = CreateNode(parent_index, offset, hall_index, current_gen);
 
         HallStats entryHall;
 
@@ -423,7 +498,7 @@ public class DungeonGenerator : MonoBehaviour
             case 0:
                 node_array[parent_index].halls_data.north.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.north.width, -node_array[parent_index].halls_data.north.offsetFromNodeCenter, true);
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.north.width, 0, true);
 
                 node_array[createdNodeIndex].halls_data.south = entryHall;
 
@@ -431,7 +506,7 @@ public class DungeonGenerator : MonoBehaviour
             case 1:
                 node_array[parent_index].halls_data.south.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.south.width, -node_array[parent_index].halls_data.south.offsetFromNodeCenter, true);
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.south.width,0, true);
 
                 node_array[createdNodeIndex].halls_data.north = entryHall;
 
@@ -439,7 +514,7 @@ public class DungeonGenerator : MonoBehaviour
             case 2:
                 node_array[parent_index].halls_data.east.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.east.width, -node_array[parent_index].halls_data.east.offsetFromNodeCenter, true);
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.east.width, 0, true);
 
                 node_array[createdNodeIndex].halls_data.west = entryHall;
 
@@ -447,7 +522,7 @@ public class DungeonGenerator : MonoBehaviour
             case 3:
                 node_array[parent_index].halls_data.west.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.west.width, -node_array[parent_index].halls_data.west.offsetFromNodeCenter, true);
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.west.width, 0, true);
 
                 node_array[createdNodeIndex].halls_data.east = entryHall;
                 break;
@@ -460,10 +535,11 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-    private void Update()
-    {
 
-    }
+
+
+
+
 
     private Vector2[] GetOpenHallwayPositions(int nodeIndex)
     {
@@ -584,6 +660,66 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
+    private void ReevaluateThisNodePosition(int nodeIndex)
+    {
+        NodeData nodeData = node_array[nodeIndex];
+        int parent_index = nodeData.parentNode_index;
+
+        int directionIndex = nodeData.directionIndexFromParent;
+        Debug.Log("Reevaluating Node "+nodeIndex+" Position. Direction from Parent="+directionIndex);
+
+        if (parent_index != -1)
+        {
+            NodeData parentData = node_array[nodeData.parentNode_index];
+            Vector2 offsetFromParent = nodeData.offsetFromParentNode;
+            Vector2 newNodeOffset = Vector2.zero;
+
+            if (directionIndex == 0) //north of parent
+            {
+                int offset_y = parentData.walls_offset.north + parentData.halls_data.north.length + nodeData.walls_offset.south + 2; //the +2 accounts for the wall cell and moving to the actual node position
+
+                int offset_x = parentData.halls_data.north.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(offset_x, offset_y);
+
+                nodeData.offsetFromParentNode = newNodeOffset;
+
+            }
+            else if (directionIndex == 1) //south of parent
+            {
+                int offset_y = parentData.walls_offset.south + parentData.halls_data.south.length + nodeData.walls_offset.north + 2; //the +2 accounts for the wall cell and moving to the actual node position
+                int offset_x = parentData.halls_data.south.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(offset_x, -offset_y);
+
+                nodeData.offsetFromParentNode = newNodeOffset;
+
+            }
+            else if (directionIndex == 2) //east of parent
+            {
+                int offset_x = parentData.walls_offset.east + parentData.halls_data.east.length + nodeData.walls_offset.west + 2; //the +2 accounts for the wall cell and moving to the actual node position
+                int offset_y = parentData.halls_data.east.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(offset_x, -offset_y);
+
+                nodeData.offsetFromParentNode = newNodeOffset;
+
+            }
+            else if (directionIndex == 3) //west of parent
+            {
+                int offset_x = parentData.walls_offset.west + parentData.halls_data.west.length + nodeData.walls_offset.east + 2; //the +2 accounts for the wall cell and moving to the actual node position
+                int offset_y = parentData.halls_data.west.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(-offset_x, offset_y);
+
+                nodeData.offsetFromParentNode = newNodeOffset;
+
+
+
+            }
+
+            Debug.Log("Node:" + nodeIndex + " expanded position set at " + newNodeOffset);
+
+        }
+
+
+    }
 
     private void InstantiateNodeLayout(int node_index)
     {
@@ -986,66 +1122,62 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    private void InitializeGrid()
+
+    private int CreateNode(int parent_index, Vector2 offset, int hallIndex, int gen)
     {
-        GameObject gridContainer = new GameObject("GridContainer");
+        int parentHallWidth = hall_minWidth;
 
-        if (grid_prefab != null)
+        if (parent_index >= 0)
         {
-            for (int j = 0; j < gridHeight; j++) // the < makes sure count stops at gridHeight-1 because index starts at 0
+            switch (hallIndex)
             {
-                float zPosition = j - grid_halfHeight; //(-grid_halfHeight) keeps the grid draw centered at 0,0 worldspace
+                case 0: //north
+                    parentHallWidth = node_array[parent_index].halls_data.north.width;
+                    break;
+                case 1:
+                    parentHallWidth = node_array[parent_index].halls_data.south.width;
 
-                for (int i = 0; i < gridWidth; i++)
-                {
-                    Vector3 gridPoint = new Vector3(i - grid_halfWidth, 0f, zPosition);
-                    GameObject currentCell = Instantiate(grid_prefab, gridPoint, Quaternion.identity);
-                    currentCell.transform.SetParent(gridContainer.transform);
+                    break;
+                case 2:
+                    parentHallWidth = node_array[parent_index].halls_data.east.width;
 
-                    cellMatrix[i, j] = new cellData(cellType.undef, currentCell);
+                    break;
+                case 3:
+                    parentHallWidth = node_array[parent_index].halls_data.west.width;
 
-                    UpdateCellPrefabParameters(i, j);
-                }
+                    break;
+                default:
+                    parentHallWidth = hall_minWidth;
+
+                    break;
+
 
             }
 
         }
-        else
-        {
-            Debug.Log("grid_prefab is NULL.");
-        }
-    }
 
-    private int CreateNode(int parent_index, Vector2 offset, int gen)
-    {
+        //WallsOffset walls = default_wallsOffset; //how many cells are between node an wall
+        WallsOffset walls = new WallsOffset(parentHallWidth / 2, parentHallWidth / 2, parentHallWidth / 2, parentHallWidth / 2);
 
-        WallsOffset walls = default_wallsOffset; //how many cells are between node an wall
+
+
         HallStats n_hall = zeroed_hallStats;
         HallStats s_hall = zeroed_hallStats;
         HallStats e_hall = zeroed_hallStats;
         HallStats w_hall = zeroed_hallStats;
         HallsData halls = new HallsData(n_hall, s_hall, e_hall, w_hall);
 
-        node_array[endNodeIndex] = new NodeData(parent_index, offset, walls, halls, gen);
+        node_array[endNodeIndex] = new NodeData(parent_index, offset, hallIndex, walls, halls, gen);
 
         //Debug.Log("Added node " + endNodeIndex + " to Node " + parent_index);
-
+        Debug.Log("Creating Node:" + endNodeIndex + " at offset " + offset);
 
         endNodeIndex++; //increase End Node Index by 1
 
         return endNodeIndex - 1;
     }
 
-    private void ResetNode(int nodeIndex)
-    {
-        WallsOffset walls = default_wallsOffset; //how many cells are between node an wall
-        HallStats n_hall = zeroed_hallStats;
-        HallStats s_hall = zeroed_hallStats;
-        HallStats e_hall = zeroed_hallStats;
-        HallStats w_hall = zeroed_hallStats;
-        HallsData halls = new HallsData(n_hall, s_hall, e_hall, w_hall);
 
-        node_array[nodeIndex] = new NodeData(nodeIndex - 1, Vector2.zero, walls, halls, -1);
 
-    }
+
 }

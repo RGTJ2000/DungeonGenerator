@@ -61,17 +61,18 @@ public class NodeData
     public int parentNode_index;
 
     public Vector2 offsetFromParentNode;
-
+    public int directionIndexFromParent;
     public WallsOffset walls_offset;
 
     public HallsData halls_data;
 
     public int genIndex;
 
-    public NodeData(int parent, Vector2 offset,  WallsOffset walls, HallsData halls, int gen )
+    public NodeData(int parent, Vector2 offset, int direction, WallsOffset walls, HallsData halls, int gen )
     {
         this.parentNode_index = parent;
         this.offsetFromParentNode = offset;
+        this.directionIndexFromParent = direction;
         this.walls_offset = walls;
         this.halls_data = halls;
         this.genIndex = gen;

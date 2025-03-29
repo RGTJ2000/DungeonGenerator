@@ -643,8 +643,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid_prefab: {fileID: 6165363417885440625, guid: 1beda99ce311c3c48ba45a52a7854ad8, type: 3}
-  grid_halfWidth: 200
-  grid_halfHeight: 150
+  grid_halfWidth: 400
+  grid_halfHeight: 300
   grid_greenMat: {fileID: 2100000, guid: 6b76590bd69524f488750bb65da2b35a, type: 2}
   grid_blackMat: {fileID: 2100000, guid: 310d6ad1ed10bd94fa78bb8677fe39e0, type: 2}
   grid_whiteMat: {fileID: 2100000, guid: 96d55889504cc8e4dbce38542b3db357, type: 2}
@@ -652,17 +652,17 @@ MonoBehaviour:
   max_numberOfNodes: 100
   current_gen: 0
   mainPath_nodeCount: 10
-  hall_maxLength: 20
+  hall_maxLength: 25
   hall_minWidth: 2
-  hall_maxWidth: 3
-  max_roomHeight: 20
-  max_roomWidth: 20
+  hall_maxWidth: 8
+  max_roomHeight: 30
+  max_roomWidth: 30
   sw_hprob:
     northProb: 0
     southProb: 0
     eastProb: 1
     westProb: 0
-  room_prob: 0.3
+  room_prob: 0.8
 --- !u!4 &1926587493
 Transform:
   m_ObjectHideFlags: 0

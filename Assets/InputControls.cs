@@ -44,6 +44,15 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""CreateNextNode"",
+                    ""type"": ""Button"",
+                    ""id"": ""d8ae39bb-fd6c-4ae9-b7de-ac3f9b003809"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -90,6 +99,17 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""action"": ""Refresh"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""330f8229-2e37-4b8b-9dab-f7e3e011eb67"",
+                    ""path"": ""<Keyboard>/l"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CreateNextNode"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -100,6 +120,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         m_General = asset.FindActionMap("General", throwIfNotFound: true);
         m_General_NodeSize = m_General.FindAction("NodeSize", throwIfNotFound: true);
         m_General_Refresh = m_General.FindAction("Refresh", throwIfNotFound: true);
+        m_General_CreateNextNode = m_General.FindAction("CreateNextNode", throwIfNotFound: true);
     }
 
     ~@InputControls()
@@ -168,12 +189,14 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
     private List<IGeneralActions> m_GeneralActionsCallbackInterfaces = new List<IGeneralActions>();
     private readonly InputAction m_General_NodeSize;
     private readonly InputAction m_General_Refresh;
+    private readonly InputAction m_General_CreateNextNode;
     public struct GeneralActions
     {
         private @InputControls m_Wrapper;
         public GeneralActions(@InputControls wrapper) { m_Wrapper = wrapper; }
         public InputAction @NodeSize => m_Wrapper.m_General_NodeSize;
         public InputAction @Refresh => m_Wrapper.m_General_Refresh;
+        public InputAction @CreateNextNode => m_Wrapper.m_General_CreateNextNode;
         public InputActionMap Get() { return m_Wrapper.m_General; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -189,6 +212,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @Refresh.started += instance.OnRefresh;
             @Refresh.performed += instance.OnRefresh;
             @Refresh.canceled += instance.OnRefresh;
+            @CreateNextNode.started += instance.OnCreateNextNode;
+            @CreateNextNode.performed += instance.OnCreateNextNode;
+            @CreateNextNode.canceled += instance.OnCreateNextNode;
         }
 
         private void UnregisterCallbacks(IGeneralActions instance)
@@ -199,6 +225,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @Refresh.started -= instance.OnRefresh;
             @Refresh.performed -= instance.OnRefresh;
             @Refresh.canceled -= instance.OnRefresh;
+            @CreateNextNode.started -= instance.OnCreateNextNode;
+            @CreateNextNode.performed -= instance.OnCreateNextNode;
+            @CreateNextNode.canceled -= instance.OnCreateNextNode;
         }
 
         public void RemoveCallbacks(IGeneralActions instance)
@@ -220,5 +249,6 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
     {
         void OnNodeSize(InputAction.CallbackContext context);
         void OnRefresh(InputAction.CallbackContext context);
+        void OnCreateNextNode(InputAction.CallbackContext context);
     }
 }
