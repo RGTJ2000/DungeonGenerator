@@ -146,25 +146,6 @@ public class DungeonGenerator : MonoBehaviour
         neutral_hProb = new hallProbability(1, 1, 1, 1);
         sw_hprob = new hallProbability(1, 3, 3, 1);
 
-        //InitializeGrid();
-
-        //CreateMainPath();
-
-        //InstantiateAllNodes();
-
-        //AddNodesToParentHalls(0);
-
-
-
-        //UpdateGridData();
-
-        //RedrawGrid();
-
-
-
-
-
-
     }
 
     private void OnCreateNextNode(InputAction.CallbackContext context)
@@ -184,7 +165,7 @@ public class DungeonGenerator : MonoBehaviour
             CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
 
             ExpandNodeAtRandom(i);
-            ReevaluateThisNodePosition(i);
+            ReevaluateThisNodePositionAfterExpand(i);
             SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
 
         }
@@ -192,14 +173,14 @@ public class DungeonGenerator : MonoBehaviour
         {
             AddNodesToParentHalls(i - 1);
             ExpandNodeAtRandom(i);
-            ReevaluateThisNodePosition(i);
+            ReevaluateThisNodePositionAfterExpand(i);
 
         }
         else
         {
             AddNodesToParentHalls(i - 1);
             ExpandNodeAtRandom(i);
-            ReevaluateThisNodePosition(i);
+            ReevaluateThisNodePositionAfterExpand(i);
             SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
 
 
@@ -223,7 +204,7 @@ public class DungeonGenerator : MonoBehaviour
                 CreateNode(i - 1, Vector2.zero, -1, current_gen);
 
                 ExpandNodeAtRandom(i);
-                ReevaluateThisNodePosition(i);
+                ReevaluateThisNodePositionAfterExpand(i);
                 SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
 
             }
@@ -231,14 +212,15 @@ public class DungeonGenerator : MonoBehaviour
             {
                 AddNodesToParentHalls(i - 1);
                 ExpandNodeAtRandom(i);
-                ReevaluateThisNodePosition(i);
+                ReevaluateThisNodePositionAfterExpand(i);
 
             }
             else
             {
                 AddNodesToParentHalls(i - 1);
                 ExpandNodeAtRandom(i);
-                ReevaluateThisNodePosition(i);
+                ReevaluateThisNodePositionAfterExpand(i);
+
                 SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
 
 
@@ -298,13 +280,82 @@ public class DungeonGenerator : MonoBehaviour
         if (Random.value < room_prob)
         {
             int minHeight = node_array[nodeIndex].walls_offset.north + node_array[nodeIndex].walls_offset.south + 1;
-            int minWidth = node_array[nodeIndex].walls_offset.east + node_array[nodeIndex].walls_offset.west +1;
+            int minWidth = node_array[nodeIndex].walls_offset.east + node_array[nodeIndex].walls_offset.west + 1;
             //expand room
             int height = Random.Range(minHeight, max_roomHeight);
             int width = Random.Range(minWidth, max_roomWidth);
 
             node_array[nodeIndex].walls_offset = new WallsOffset(height / 2, height / 2, width / 2, width / 2);
+
+            OffsetNodeFromHallway(nodeIndex);
         }
+
+
+    }
+
+    private void OffsetNodeFromHallway(int nodeIndex)
+    {
+        
+
+        if (nodeIndex > 0)
+        {
+            NodeData nodeData = node_array[nodeIndex];
+            NodeData parentNodeData = node_array[nodeData.parentNode_index];
+
+            int roomHeight = nodeData.walls_offset.north + nodeData.walls_offset.south + 1;
+            int roomWidth = nodeData.walls_offset.east + nodeData.walls_offset.west + 1;
+
+            int newOffset = 0;
+            int maxOffset = 0;
+
+            float originalOffset_x = nodeData.offsetFromParentNode.x;
+            float originalOffset_y = nodeData.offsetFromParentNode.y;
+
+            switch (nodeData.directionIndexFromParent)  //shift node AND shift hallway entrance
+            {
+                case 0: //north
+                    maxOffset = (roomWidth - parentNodeData.halls_data.north.width) / 2;
+                    newOffset = Random.Range(-maxOffset, maxOffset + 1);
+                    nodeData.offsetFromParentNode = new Vector2(originalOffset_x + newOffset, originalOffset_y);
+                    nodeData.halls_data.south.offsetFromNodeCenter = nodeData.halls_data.south.offsetFromNodeCenter - newOffset; //halway shift
+                    break;
+
+                case 1: //south
+                    maxOffset = (roomWidth - parentNodeData.halls_data.south.width) / 2;
+                    newOffset = Random.Range(-maxOffset, maxOffset + 1);
+                    nodeData.offsetFromParentNode = new Vector2(originalOffset_x - newOffset, originalOffset_y);
+                    nodeData.halls_data.north.offsetFromNodeCenter = nodeData.halls_data.north.offsetFromNodeCenter + newOffset; //halway shift
+
+                    break;
+
+                case 2: //east
+                    maxOffset = (roomHeight - parentNodeData.halls_data.east.width) / 2;
+                    newOffset = Random.Range(-maxOffset, maxOffset + 1);
+                    nodeData.offsetFromParentNode = new Vector2(originalOffset_x, originalOffset_y - newOffset);
+
+                    nodeData.halls_data.west.offsetFromNodeCenter = nodeData.halls_data.west.offsetFromNodeCenter + newOffset; //halway shift
+
+                    break;
+
+                case 3: //west
+                    maxOffset = (roomHeight - parentNodeData.halls_data.west.width) / 2;
+                    newOffset = Random.Range(-maxOffset, maxOffset + 1);
+                    nodeData.offsetFromParentNode = new Vector2(originalOffset_x, originalOffset_y + newOffset);
+
+                    nodeData.halls_data.east.offsetFromNodeCenter = nodeData.halls_data.east.offsetFromNodeCenter + newOffset; //halway shift
+
+                    break;
+
+                default:
+                    break;
+
+
+
+            }
+
+        }
+
+
 
     }
 
@@ -407,8 +458,8 @@ public class DungeonGenerator : MonoBehaviour
     {
         int length = Random.Range(1, hall_maxLength + 1);
 
-        
-       
+
+
         int maxWidth;
         switch (direction)
         {
@@ -434,7 +485,7 @@ public class DungeonGenerator : MonoBehaviour
                 break;
 
         }
-        
+
         if (maxWidth >= hall_maxWidth)
         {
             maxWidth = hall_maxWidth;
@@ -506,7 +557,7 @@ public class DungeonGenerator : MonoBehaviour
             case 1:
                 node_array[parent_index].halls_data.south.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.south.width,0, true);
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.south.width, 0, true);
 
                 node_array[createdNodeIndex].halls_data.north = entryHall;
 
@@ -660,26 +711,31 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-    private void ReevaluateThisNodePosition(int nodeIndex)
+    private void ReevaluateThisNodePositionAfterExpand(int nodeIndex)
     {
         NodeData nodeData = node_array[nodeIndex];
         int parent_index = nodeData.parentNode_index;
 
         int directionIndex = nodeData.directionIndexFromParent;
-        Debug.Log("Reevaluating Node "+nodeIndex+" Position. Direction from Parent="+directionIndex);
+        Debug.Log("Reevaluating Node " + nodeIndex + " Position. Direction from Parent=" + directionIndex);
 
         if (parent_index != -1)
         {
             NodeData parentData = node_array[nodeData.parentNode_index];
             Vector2 offsetFromParent = nodeData.offsetFromParentNode;
+            float originalOffset_x = offsetFromParent.x;
+            float originalOffset_y = offsetFromParent.y;
+
+
             Vector2 newNodeOffset = Vector2.zero;
 
             if (directionIndex == 0) //north of parent
             {
                 int offset_y = parentData.walls_offset.north + parentData.halls_data.north.length + nodeData.walls_offset.south + 2; //the +2 accounts for the wall cell and moving to the actual node position
 
-                int offset_x = parentData.halls_data.north.offsetFromNodeCenter;
-                newNodeOffset = new Vector2(offset_x, offset_y);
+
+                //int offset_x = parentData.halls_data.north.offsetFromNodeCenter; //the centers the node on the hallway
+                newNodeOffset = new Vector2(originalOffset_x, offset_y);
 
                 nodeData.offsetFromParentNode = newNodeOffset;
 
@@ -687,8 +743,9 @@ public class DungeonGenerator : MonoBehaviour
             else if (directionIndex == 1) //south of parent
             {
                 int offset_y = parentData.walls_offset.south + parentData.halls_data.south.length + nodeData.walls_offset.north + 2; //the +2 accounts for the wall cell and moving to the actual node position
-                int offset_x = parentData.halls_data.south.offsetFromNodeCenter;
-                newNodeOffset = new Vector2(offset_x, -offset_y);
+                
+                //int offset_x = parentData.halls_data.south.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(originalOffset_x, -offset_y);
 
                 nodeData.offsetFromParentNode = newNodeOffset;
 
@@ -696,8 +753,8 @@ public class DungeonGenerator : MonoBehaviour
             else if (directionIndex == 2) //east of parent
             {
                 int offset_x = parentData.walls_offset.east + parentData.halls_data.east.length + nodeData.walls_offset.west + 2; //the +2 accounts for the wall cell and moving to the actual node position
-                int offset_y = parentData.halls_data.east.offsetFromNodeCenter;
-                newNodeOffset = new Vector2(offset_x, -offset_y);
+                //int offset_y = parentData.halls_data.east.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(offset_x, originalOffset_y);
 
                 nodeData.offsetFromParentNode = newNodeOffset;
 
@@ -705,8 +762,8 @@ public class DungeonGenerator : MonoBehaviour
             else if (directionIndex == 3) //west of parent
             {
                 int offset_x = parentData.walls_offset.west + parentData.halls_data.west.length + nodeData.walls_offset.east + 2; //the +2 accounts for the wall cell and moving to the actual node position
-                int offset_y = parentData.halls_data.west.offsetFromNodeCenter;
-                newNodeOffset = new Vector2(-offset_x, offset_y);
+                //int offset_y = parentData.halls_data.west.offsetFromNodeCenter;
+                newNodeOffset = new Vector2(-offset_x, originalOffset_y);
 
                 nodeData.offsetFromParentNode = newNodeOffset;
 

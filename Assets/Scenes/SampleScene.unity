@@ -653,7 +653,7 @@ MonoBehaviour:
   current_gen: 0
   mainPath_nodeCount: 10
   hall_maxLength: 25
-  hall_minWidth: 2
+  hall_minWidth: 3
   hall_maxWidth: 8
   max_roomHeight: 30
   max_roomWidth: 30
@@ -662,7 +662,7 @@ MonoBehaviour:
     southProb: 0
     eastProb: 1
     westProb: 0
-  room_prob: 0.8
+  room_prob: 0.5
 --- !u!4 &1926587493
 Transform:
   m_ObjectHideFlags: 0
