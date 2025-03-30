@@ -181,7 +181,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 160
+  orthographic size: 350
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -608,7 +608,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -1, z: 0}
-  m_LocalScale: {x: 400, y: 1, z: 300}
+  m_LocalScale: {x: 900, y: 1, z: 600}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -643,20 +643,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid_prefab: {fileID: 6165363417885440625, guid: 1beda99ce311c3c48ba45a52a7854ad8, type: 3}
-  grid_halfWidth: 400
-  grid_halfHeight: 300
+  grid_halfWidth: 450
+  grid_halfHeight: 350
   grid_greenMat: {fileID: 2100000, guid: 6b76590bd69524f488750bb65da2b35a, type: 2}
   grid_blackMat: {fileID: 2100000, guid: 310d6ad1ed10bd94fa78bb8677fe39e0, type: 2}
   grid_whiteMat: {fileID: 2100000, guid: 96d55889504cc8e4dbce38542b3db357, type: 2}
   grid_greyMat: {fileID: 2100000, guid: 56b9d5a06dbad6f418d9445b5585c238, type: 2}
+  grid_startMat: {fileID: 2100000, guid: 36c49da727a8e404094b04bd6b6099bd, type: 2}
+  grid_endMat: {fileID: 2100000, guid: 82890fde646f2354aa3311a41cec8db3, type: 2}
   max_numberOfNodes: 100
   current_gen: 0
   mainPath_nodeCount: 10
-  hall_maxLength: 25
+  hall_maxLength: 40
   hall_minWidth: 3
   hall_maxWidth: 8
-  max_roomHeight: 30
-  max_roomWidth: 30
+  max_roomHeight: 40
+  max_roomWidth: 40
   sw_hprob:
     northProb: 0
     southProb: 0

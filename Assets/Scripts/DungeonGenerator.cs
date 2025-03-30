@@ -16,11 +16,13 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] Material grid_blackMat;
     [SerializeField] Material grid_whiteMat;
     [SerializeField] Material grid_greyMat;
+    [SerializeField] Material grid_startMat;
+    [SerializeField] Material grid_endMat;
 
     [SerializeField] int max_numberOfNodes = 50;
     //[SerializeField] int current_node;
     [SerializeField] int current_gen;
-    [SerializeField] int mainPath_nodeCount = 0;
+    [SerializeField] int mainPath_nodeCount = 10;
 
     [SerializeField] WallsOffset default_wallsOffset = new WallsOffset(1, 1, 1, 1);
     [SerializeField] HallStats default_hallStats = new HallStats(4, 3, 0, false);
@@ -51,7 +53,9 @@ public class DungeonGenerator : MonoBehaviour
         undef,
         node,
         wall,
-        hall
+        hall,
+        start,
+        end
 
     }
 
@@ -88,9 +92,10 @@ public class DungeonGenerator : MonoBehaviour
 
     private InputControls _inputControls;
 
-    private int endNodeIndex = 0; //the first empty slot in the array
+    private int endNode_index = 0; //the first empty slot in the array
+    private int pointerToGen0Node = 0;
 
-    private bool loopComplete = false;
+    private bool gen1_complete = false;
     /*
      * METHODS BELOW *********************************************************************************
      */
@@ -133,7 +138,7 @@ public class DungeonGenerator : MonoBehaviour
         gridContainer = new GameObject("GridContainer");
 
         node_array = new NodeData[max_numberOfNodes];
-        endNodeIndex = 0;
+        endNode_index = 0;
         current_gen = 0;
 
         gridWidth = grid_halfWidth * 2;
@@ -151,42 +156,68 @@ public class DungeonGenerator : MonoBehaviour
     private void OnCreateNextNode(InputAction.CallbackContext context)
     {
 
-        if (endNodeIndex >= mainPath_nodeCount)
+        //if (pointerToGen0Node >= mainPath_nodeCount - 1) //reset nodes
+        if (gen1_complete)
         {
             DestroyGridObjects();
             ResetCellMatrix();
-            endNodeIndex = 0;
+            endNode_index = 0;
+            pointerToGen0Node = 0;
+            current_gen = 0;
+            gen1_complete = false;
 
         }
-        int i = endNodeIndex;
 
-        if (i == 0)
+
+        int i = endNode_index;
+
+        if (i < mainPath_nodeCount) //make main path
         {
-            CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
+            Debug.Log("ON NODE:" + i);
+            if (i == 0)
+            {
+                CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
 
-            ExpandNodeAtRandom(i);
-            ReevaluateThisNodePositionAfterExpand(i);
-            SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+                //ExpandNodeAtRandom(i);
+                //ReevaluateThisNodePositionAfterExpand(i);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+
+            }
+            else if (i == mainPath_nodeCount - 1)
+            {
+                AddNodesToParentHalls(i - 1);
+                //ExpandNodeAtRandom(i);
+                //ReevaluateThisNodePositionAfterExpand(i);
+
+                current_gen++;
+            }
+            else
+            {
+                AddNodesToParentHalls(i - 1);
+                //ExpandNodeAtRandom(i);
+                //ReevaluateThisNodePositionAfterExpand(i);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+
+
+            }
+
 
         }
-        else if (i == mainPath_nodeCount - 1)
+        else //make expansion paths
         {
-            AddNodesToParentHalls(i - 1);
-            ExpandNodeAtRandom(i);
-            ReevaluateThisNodePositionAfterExpand(i);
+            Debug.Log("ADDING hallways and nodes to Main Path.");
+            for (int mainPathNode = 0;  mainPathNode < mainPath_nodeCount; mainPathNode++)
+            {
+                SelectAndAddRandomHallsToNode(mainPathNode, neutral_hProb, 0, 3);
+                AddNodesToParentHalls(mainPathNode);
+            }
 
-        }
-        else
-        {
-            AddNodesToParentHalls(i - 1);
-            ExpandNodeAtRandom(i);
-            ReevaluateThisNodePositionAfterExpand(i);
-            SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
-
+            gen1_complete = true;
+            //pointerToGen0Node++;
 
         }
 
-        Debug.Log("Node #" + i + " created.");
+
 
         InstantiateAllNodes();
 
@@ -205,7 +236,7 @@ public class DungeonGenerator : MonoBehaviour
 
                 ExpandNodeAtRandom(i);
                 ReevaluateThisNodePositionAfterExpand(i);
-                SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
 
             }
             else if (i == mainPath_nodeCount - 1)
@@ -221,7 +252,7 @@ public class DungeonGenerator : MonoBehaviour
                 ExpandNodeAtRandom(i);
                 ReevaluateThisNodePositionAfterExpand(i);
 
-                SelectAndAddRandomHallsToNode(i, sw_hprob, 1);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
 
 
             }
@@ -230,7 +261,7 @@ public class DungeonGenerator : MonoBehaviour
 
         }
 
-        Debug.Log("End Node Index is now " + endNodeIndex);
+        Debug.Log("End Node Index is now " + endNode_index);
 
 
     }
@@ -295,7 +326,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private void OffsetNodeFromHallway(int nodeIndex)
     {
-        
+
 
         if (nodeIndex > 0)
         {
@@ -363,8 +394,8 @@ public class DungeonGenerator : MonoBehaviour
     {
         DestroyGridObjects();
         ResetCellMatrix();
-        endNodeIndex = 0;
-        loopComplete = false;
+        endNode_index = 0;
+        pointerToGen0Node = 0;
         //CreateMainPath();
 
         //InstantiateAllNodes();
@@ -372,14 +403,14 @@ public class DungeonGenerator : MonoBehaviour
 
     private void InstantiateAllNodes()
     {
-        for (int i = 0; i < endNodeIndex; i++)
+        for (int i = 0; i < endNode_index; i++)
         {
             InstantiateNodeLayout(i);
         }
 
     }
 
-    void SelectAndAddRandomHallsToNode(int nodeIndex, hallProbability h_prob, int maxHallCheck)
+    void SelectAndAddRandomHallsToNode(int nodeIndex, hallProbability h_prob, int minHallAdd, int maxHallAdd)
     {
         NodeData nodeData = node_array[nodeIndex];
 
@@ -438,17 +469,23 @@ public class DungeonGenerator : MonoBehaviour
 
         }
 
-        //choose random hallway direction from list
-        if (probPool.Count > 0)
-        {
-            string randomDirection = probPool[Random.Range(0, probPool.Count)];
+        //determine how many hall to add randomly
+        int hallsToAdd = Random.Range(minHallAdd, maxHallAdd + 1);
 
-            AddHallToNode(nodeIndex, randomDirection);
-        }
-        else
+        //choose random hallway direction from list
+        for (int i = 0; i < hallsToAdd; i++)
         {
-            Debug.Log("No available directions found.");
+            if (probPool.Count > 0)
+            {
+                int randomIndex = Random.Range(0, probPool.Count);
+                string randomDirection = probPool[randomIndex];
+                AddHallToNode(nodeIndex, randomDirection);
+                //Debug.Log("Hall added to Node:" + nodeIndex + " in direction:" + randomDirection);
+
+                probPool.RemoveAll(item => item == randomDirection);
+            }
         }
+
 
 
 
@@ -518,7 +555,7 @@ public class DungeonGenerator : MonoBehaviour
 
         }
 
-        Debug.Log("Node " + nodeIndex + ": adding hallway WIDTH=" + width + "(" + maxWidth + ") Offset=" + offset);
+        //Debug.Log("Node " + nodeIndex + ": adding hallway WIDTH=" + width + "(" + maxWidth + ") Offset=" + offset);
     }
 
     void AddNodesToParentHalls(int parent_index)
@@ -650,7 +687,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private void ReevaluateOtherNodePositions(int resizedNodeIndex)
     {
-        for (int i = 0; i < endNodeIndex; i++)
+        for (int i = 0; i < endNode_index; i++)
         {
             if (i != resizedNodeIndex)
             {
@@ -717,7 +754,7 @@ public class DungeonGenerator : MonoBehaviour
         int parent_index = nodeData.parentNode_index;
 
         int directionIndex = nodeData.directionIndexFromParent;
-        Debug.Log("Reevaluating Node " + nodeIndex + " Position. Direction from Parent=" + directionIndex);
+        //Debug.Log("Reevaluating Node " + nodeIndex + " Position. Direction from Parent=" + directionIndex);
 
         if (parent_index != -1)
         {
@@ -743,7 +780,7 @@ public class DungeonGenerator : MonoBehaviour
             else if (directionIndex == 1) //south of parent
             {
                 int offset_y = parentData.walls_offset.south + parentData.halls_data.south.length + nodeData.walls_offset.north + 2; //the +2 accounts for the wall cell and moving to the actual node position
-                
+
                 //int offset_x = parentData.halls_data.south.offsetFromNodeCenter;
                 newNodeOffset = new Vector2(originalOffset_x, -offset_y);
 
@@ -771,7 +808,7 @@ public class DungeonGenerator : MonoBehaviour
 
             }
 
-            Debug.Log("Node:" + nodeIndex + " expanded position set at " + newNodeOffset);
+            //Debug.Log("Node:" + nodeIndex + " expanded position set at " + newNodeOffset);
 
         }
 
@@ -802,7 +839,23 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = startX; i <= endX; i++)
             {
-                CheckCellAndInstantiate(i, j, cellType.node);
+                cellType thisCellType;
+
+                if (node_index == 0)
+                {
+                    thisCellType = cellType.start;
+
+                }
+                else if (node_index == mainPath_nodeCount - 1)
+                {
+                    thisCellType = cellType.end;
+                }
+                else
+                {
+                    thisCellType = cellType.node;
+                }
+
+                CheckCellAndInstantiate(i, j, thisCellType);
 
             }
 
@@ -961,7 +1014,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private void UpdateGridData()
     {
-        for (int node_index = 0; node_index < endNodeIndex; node_index++)
+        for (int node_index = 0; node_index < endNode_index; node_index++)
         {
             //Debug.Log("Updating grid for node:" + node_index);
 
@@ -1164,6 +1217,15 @@ public class DungeonGenerator : MonoBehaviour
                     text = "H";
                     materialToUse = grid_greyMat;
                     break;
+                case cellType.start:
+                    text = "S";
+                    materialToUse = grid_startMat;
+                    break;
+                case cellType.end:
+                    text = "E";
+                    materialToUse = grid_endMat;
+                    break;
+
                 default:
                     text = "X";
                     materialToUse = grid_greenMat;
@@ -1224,14 +1286,17 @@ public class DungeonGenerator : MonoBehaviour
         HallStats w_hall = zeroed_hallStats;
         HallsData halls = new HallsData(n_hall, s_hall, e_hall, w_hall);
 
-        node_array[endNodeIndex] = new NodeData(parent_index, offset, hallIndex, walls, halls, gen);
+        node_array[endNode_index] = new NodeData(parent_index, offset, hallIndex, walls, halls, gen);
 
         //Debug.Log("Added node " + endNodeIndex + " to Node " + parent_index);
-        Debug.Log("Creating Node:" + endNodeIndex + " at offset " + offset);
+        //Debug.Log("Creating Node:" + endNode_index + " at offset " + offset);
 
-        endNodeIndex++; //increase End Node Index by 1
+        ExpandNodeAtRandom(endNode_index);
+        ReevaluateThisNodePositionAfterExpand(endNode_index);
 
-        return endNodeIndex - 1;
+        endNode_index++; //increase End Node Index by 1
+
+        return endNode_index - 1;
     }
 
 
