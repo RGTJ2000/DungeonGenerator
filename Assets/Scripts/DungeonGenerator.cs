@@ -96,6 +96,7 @@ public class DungeonGenerator : MonoBehaviour
     private int pointerToGen0Node = 0;
 
     private bool gen1_complete = false;
+    private bool gen2_complete = false;
 
     public bool currentlyGenerating = false;
     /*
@@ -113,8 +114,6 @@ public class DungeonGenerator : MonoBehaviour
     {
         _inputControls.General.Enable();
 
-        _inputControls.General.NodeSize.started += OnNodeSize;
-
         _inputControls.General.Refresh.started += OnRefresh;
 
         _inputControls.General.CreateNextNode.started += OnCreateNextNode;
@@ -127,7 +126,6 @@ public class DungeonGenerator : MonoBehaviour
     {
         _inputControls.General.Disable();
 
-        _inputControls.General.NodeSize.started -= OnNodeSize;
         _inputControls.General.Refresh.started -= OnRefresh;
         _inputControls.General.CreateNextNode.started -= OnCreateNextNode;
         _inputControls.General.GenerateFullLayout.started -= OnGenerateFullLayout;
@@ -226,122 +224,41 @@ public class DungeonGenerator : MonoBehaviour
 
     private void OnGenerateFullLayout(InputAction.CallbackContext context)
     {
-        if (!gen1_complete)
+        if (!currentlyGenerating && !gen2_complete)
         {
             StartCoroutine(GenerateLayout());
 
         }
         else
         {
-            Debug.Log("Generation complete. Refresh [SPACE] to start new generation.");
-        }
-
-        /*
-        if (!gen1_complete)
-        {
-            currentlyGenerating = true;
-
-            Debug.Log("Creating Main Path...");
-            for (int i = 0; i < mainPath_nodeCount; i++) //generates the main path
+            if (gen2_complete)
             {
-                if (i == 0) //make the start node
-                {
-                    CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
-                    SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
-
-                }
-                else if (i == mainPath_nodeCount - 1) //makes the end node
-                {
-                    AddNodesToParentHalls(i - 1);
-                    current_gen++;
-                }
-                else //make the intermediate nodes
-                {
-                    AddNodesToParentHalls(i - 1);
-                    SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
-                }
+                Debug.Log("Generation complete. Refresh [SPACE] to start new generation.");
 
             }
-
-            int gen1_startIndex = endNode_index;
-            
-            Debug.Log("Creating gen1 nodes from Main Path...");
-            for (int i = 0; i < mainPath_nodeCount; i++) //step through mainpath nodes, adding halls and nodes.
+            else
             {
-                SelectAndAddRandomHallsToNode(i, neutral_hProb, 0, 3);
-                AddNodesToParentHalls(i);
-
-
+                Debug.Log("Still generating. Please wait.");
             }
-            current_gen++;
-            int gen1_endIndex = endNode_index - 1;
-
-
-            Debug.Log("gen1 nodes generation complete. gen1 Start Index="+gen1_startIndex+" End Index="+gen1_endIndex);
-            Debug.Log("node_array endNode_index:"+  endNode_index);
-            
-
-            gen1_complete = true;
-
-            InstantiateAllNodes();
-            currentlyGenerating = false;
         }
-        else
-        {
-            Debug.Log("Generation complete. Refresh [SPACE] to start new generation.");
-        }
-        */
 
 
 
     }
     void OnRefresh(InputAction.CallbackContext context)
     {
-
-        DestroyGridObjects();
+        Debug.Log("Destroying Grid Objects.");
+        StartCoroutine(DestroyGridObjectsCoR());
+        
         //ResetCellMatrix();
         endNode_index = 0;
         pointerToGen0Node = 0;
         current_gen = 0;
         gen1_complete = false;
+        gen2_complete = false;
     }
 
-    private void OnNodeSize(InputAction.CallbackContext context)
-    {
-
-        float newValue = context.ReadValue<float>();
-
-        int n = node_array[0].walls_offset.north;
-        int s = node_array[0].walls_offset.south;
-        int e = node_array[0].walls_offset.east;
-        int w = node_array[0].walls_offset.west;
-
-        // Positive button pressed (from 0 to 1)
-        if (newValue == 1f)
-        {
-            //Debug.Log("Positive button pressed - Increasing node size");
-
-
-            node_array[0].walls_offset = new WallsOffset(n + 1, s + 1, e + 1, w + 1);
-        }
-        // Negative button pressed (from 0 to -1)
-        else if (newValue == -1f)
-        {
-            //Debug.Log("Negative button pressed - Decreasing node size");
-            node_array[0].walls_offset = new WallsOffset(n - 1, s - 1, e - 1, w - 1);
-
-        }
-
-        ReevaluateOtherNodePositions(0);
-
-        DestroyGridObjects();
-        //ResetCellMatrix();
-
-        InstantiateAllNodes();
-
-
-
-    }
+   
 
     private void ExpandNodeAtRandomAndOffset(int nodeIndex)
     {
@@ -427,14 +344,6 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-    private void InstantiateAllNodes()
-    {
-        for (int i = 0; i < endNode_index; i++)
-        {
-            InstantiateNodeLayout(i);
-        }
-
-    }
 
     void SelectAndAddRandomHallsToNode(int nodeIndex, hallProbability h_prob, int minHallAdd, int maxHallAdd)
     {
@@ -1020,14 +929,7 @@ public class DungeonGenerator : MonoBehaviour
         UpdateCellPrefabParameters(i, j, nodeIndex);
     }
 
-    private void DestroyGridObjects()
-    {
-        foreach (Transform child in gridContainer.transform)
-        {
-            Destroy(child.gameObject);
-
-        }
-    }
+  
 
 
     private void ResetCellMatrix()
@@ -1181,9 +1083,9 @@ public class DungeonGenerator : MonoBehaviour
         currentlyGenerating = true;
         Debug.Log("Generation requested.");
 
-        yield return new WaitForSeconds(.1f);
+        yield return null;
 
-        Debug.Log("Creating Main Path...");
+        Debug.Log("Creating MAIN PATH...");
         for (int i = 0; i < mainPath_nodeCount; i++) //generates the main path
         {
             if (i == 0) //make the start node
@@ -1205,10 +1107,10 @@ public class DungeonGenerator : MonoBehaviour
             yield return null; // Lets Unity process a frame
 
         }
-
+        Debug.Log("MAIN PATH completed.");
         int gen1_startIndex = endNode_index;
 
-        Debug.Log("Creating gen1 nodes from Main Path...");
+        Debug.Log("Creating GEN 1 NODES off Main Path...");
         for (int i = 0; i < mainPath_nodeCount; i++) //step through mainpath nodes, adding halls and nodes.
         {
             SelectAndAddRandomHallsToNode(i, neutral_hProb, 0, 3);
@@ -1216,18 +1118,27 @@ public class DungeonGenerator : MonoBehaviour
 
             yield return null; // Lets Unity process a frame
         }
+        Debug.Log("Gen1 Completed.");
+        gen1_complete = true;
         current_gen++;
         int gen1_endIndex = endNode_index - 1;
 
+        Debug.Log("Creating GEN 2 NODES off gen1 nodes.");
+        for (int i = gen1_startIndex; i <= gen1_endIndex; i++)
+        {
+            SelectAndAddRandomHallsToNode(i, neutral_hProb, 0, 3);
+            AddNodesToParentHalls(i);
+            yield return null;
+        }
+        Debug.Log("Gen2 completed.");
 
-        Debug.Log("gen1 nodes generation complete. gen1 Start Index=" + gen1_startIndex + " End Index=" + gen1_endIndex);
-        Debug.Log("node_array endNode_index:" + endNode_index);
+        gen2_complete = true;
 
 
-        gen1_complete = true;
+        Debug.Log("Beginning Instantiation.");
 
+        yield return null;
         StartCoroutine(InstantiateAllNodesCoroutine());
-        yield return null; // Lets Unity process a frame
 
     }
 
@@ -1243,5 +1154,18 @@ public class DungeonGenerator : MonoBehaviour
 
 
     }
+
+    IEnumerator DestroyGridObjectsCoR()
+    {
+        Debug.Log("Destroying " + gridContainer.transform.childCount);
+        foreach (Transform child in gridContainer.transform)
+        {
+            Destroy(child.gameObject);
+            yield return null;
+        }
+
+        Debug.Log("Grid Objects destroyed.");
+    }
+    
 
 }
