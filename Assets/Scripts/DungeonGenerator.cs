@@ -249,7 +249,7 @@ public class DungeonGenerator : MonoBehaviour
     {
         Debug.Log("Destroying Grid Objects.");
         StartCoroutine(DestroyGridObjectsCoR());
-        
+
         //ResetCellMatrix();
         endNode_index = 0;
         pointerToGen0Node = 0;
@@ -258,7 +258,7 @@ public class DungeonGenerator : MonoBehaviour
         gen2_complete = false;
     }
 
-   
+
 
     private void ExpandNodeAtRandomAndOffset(int nodeIndex)
     {
@@ -929,7 +929,7 @@ public class DungeonGenerator : MonoBehaviour
         UpdateCellPrefabParameters(i, j, nodeIndex);
     }
 
-  
+
 
 
     private void ResetCellMatrix()
@@ -1158,14 +1158,18 @@ public class DungeonGenerator : MonoBehaviour
     IEnumerator DestroyGridObjectsCoR()
     {
         Debug.Log("Destroying " + gridContainer.transform.childCount);
+        yield return null;
+
+
+
+
         foreach (Transform child in gridContainer.transform)
         {
             Destroy(child.gameObject);
-            yield return null;
         }
 
         Debug.Log("Grid Objects destroyed.");
     }
-    
+
 
 }

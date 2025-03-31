@@ -1005,7 +1005,7 @@ MonoBehaviour:
   grid_endMat: {fileID: 2100000, guid: 82890fde646f2354aa3311a41cec8db3, type: 2}
   max_numberOfNodes: 100
   current_gen: 0
-  mainPath_nodeCount: 15
+  mainPath_nodeCount: 10
   hall_maxLength: 40
   hall_minWidth: 3
   hall_maxWidth: 8
