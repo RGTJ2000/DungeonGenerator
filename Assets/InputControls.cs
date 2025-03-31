@@ -53,6 +53,15 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""GenerateFullLayout"",
+                    ""type"": ""Button"",
+                    ""id"": ""07451ccf-b71d-415a-a753-96d2d5a0b41e"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -110,6 +119,17 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""action"": ""CreateNextNode"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1c3145af-0fd7-4be4-8bda-0f78cc248e89"",
+                    ""path"": ""<Keyboard>/g"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""GenerateFullLayout"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -121,6 +141,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         m_General_NodeSize = m_General.FindAction("NodeSize", throwIfNotFound: true);
         m_General_Refresh = m_General.FindAction("Refresh", throwIfNotFound: true);
         m_General_CreateNextNode = m_General.FindAction("CreateNextNode", throwIfNotFound: true);
+        m_General_GenerateFullLayout = m_General.FindAction("GenerateFullLayout", throwIfNotFound: true);
     }
 
     ~@InputControls()
@@ -190,6 +211,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_General_NodeSize;
     private readonly InputAction m_General_Refresh;
     private readonly InputAction m_General_CreateNextNode;
+    private readonly InputAction m_General_GenerateFullLayout;
     public struct GeneralActions
     {
         private @InputControls m_Wrapper;
@@ -197,6 +219,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         public InputAction @NodeSize => m_Wrapper.m_General_NodeSize;
         public InputAction @Refresh => m_Wrapper.m_General_Refresh;
         public InputAction @CreateNextNode => m_Wrapper.m_General_CreateNextNode;
+        public InputAction @GenerateFullLayout => m_Wrapper.m_General_GenerateFullLayout;
         public InputActionMap Get() { return m_Wrapper.m_General; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -215,6 +238,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @CreateNextNode.started += instance.OnCreateNextNode;
             @CreateNextNode.performed += instance.OnCreateNextNode;
             @CreateNextNode.canceled += instance.OnCreateNextNode;
+            @GenerateFullLayout.started += instance.OnGenerateFullLayout;
+            @GenerateFullLayout.performed += instance.OnGenerateFullLayout;
+            @GenerateFullLayout.canceled += instance.OnGenerateFullLayout;
         }
 
         private void UnregisterCallbacks(IGeneralActions instance)
@@ -228,6 +254,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @CreateNextNode.started -= instance.OnCreateNextNode;
             @CreateNextNode.performed -= instance.OnCreateNextNode;
             @CreateNextNode.canceled -= instance.OnCreateNextNode;
+            @GenerateFullLayout.started -= instance.OnGenerateFullLayout;
+            @GenerateFullLayout.performed -= instance.OnGenerateFullLayout;
+            @GenerateFullLayout.canceled -= instance.OnGenerateFullLayout;
         }
 
         public void RemoveCallbacks(IGeneralActions instance)
@@ -250,5 +279,6 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         void OnNodeSize(InputAction.CallbackContext context);
         void OnRefresh(InputAction.CallbackContext context);
         void OnCreateNextNode(InputAction.CallbackContext context);
+        void OnGenerateFullLayout(InputAction.CallbackContext context);
     }
 }

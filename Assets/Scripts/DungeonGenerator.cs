@@ -96,6 +96,8 @@ public class DungeonGenerator : MonoBehaviour
     private int pointerToGen0Node = 0;
 
     private bool gen1_complete = false;
+
+    public bool currentlyGenerating = false;
     /*
      * METHODS BELOW *********************************************************************************
      */
@@ -117,6 +119,8 @@ public class DungeonGenerator : MonoBehaviour
 
         _inputControls.General.CreateNextNode.started += OnCreateNextNode;
 
+        _inputControls.General.GenerateFullLayout.started += OnGenerateFullLayout;
+
     }
 
     private void OnDisable()
@@ -126,6 +130,8 @@ public class DungeonGenerator : MonoBehaviour
         _inputControls.General.NodeSize.started -= OnNodeSize;
         _inputControls.General.Refresh.started -= OnRefresh;
         _inputControls.General.CreateNextNode.started -= OnCreateNextNode;
+        _inputControls.General.GenerateFullLayout.started -= OnGenerateFullLayout;
+
     }
 
     private void Update()
@@ -157,113 +163,147 @@ public class DungeonGenerator : MonoBehaviour
     {
 
         //if (pointerToGen0Node >= mainPath_nodeCount - 1) //reset nodes
-        if (gen1_complete)
+        if (!gen1_complete)
         {
-            DestroyGridObjects();
-            ResetCellMatrix();
-            endNode_index = 0;
-            pointerToGen0Node = 0;
-            current_gen = 0;
-            gen1_complete = false;
+            int i = endNode_index;
+
+            if (i < mainPath_nodeCount) //make main path
+            {
+                Debug.Log("ON NODE:" + i);
+                if (i == 0)
+                {
+                    CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
+
+                    SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+
+                }
+                else if (i == mainPath_nodeCount - 1)
+                {
+                    AddNodesToParentHalls(i - 1);
+
+
+                    current_gen++;
+                }
+                else
+                {
+                    AddNodesToParentHalls(i - 1);
+
+                    SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+
+
+                }
+
+
+            }
+            else //make expansion paths
+            {
+                Debug.Log("ADDING hallways and nodes to Main Path.");
+                for (int mainPathNode = 0; mainPathNode < mainPath_nodeCount; mainPathNode++)
+                {
+                    SelectAndAddRandomHallsToNode(mainPathNode, neutral_hProb, 0, 3);
+                    AddNodesToParentHalls(mainPathNode);
+                }
+
+                gen1_complete = true;
+                //pointerToGen0Node++;
+
+            }
+
+
+            StartCoroutine(InstantiateAllNodesCoroutine());
 
         }
-
-
-        int i = endNode_index;
-
-        if (i < mainPath_nodeCount) //make main path
+        else
         {
-            Debug.Log("ON NODE:" + i);
-            if (i == 0)
-            {
-                CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
-
-                //ExpandNodeAtRandom(i);
-                //ReevaluateThisNodePositionAfterExpand(i);
-                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
-
-            }
-            else if (i == mainPath_nodeCount - 1)
-            {
-                AddNodesToParentHalls(i - 1);
-                //ExpandNodeAtRandom(i);
-                //ReevaluateThisNodePositionAfterExpand(i);
-
-                current_gen++;
-            }
-            else
-            {
-                AddNodesToParentHalls(i - 1);
-                //ExpandNodeAtRandom(i);
-                //ReevaluateThisNodePositionAfterExpand(i);
-                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
-
-
-            }
-
-
-        }
-        else //make expansion paths
-        {
-            Debug.Log("ADDING hallways and nodes to Main Path.");
-            for (int mainPathNode = 0;  mainPathNode < mainPath_nodeCount; mainPathNode++)
-            {
-                SelectAndAddRandomHallsToNode(mainPathNode, neutral_hProb, 0, 3);
-                AddNodesToParentHalls(mainPathNode);
-            }
-
-            gen1_complete = true;
-            //pointerToGen0Node++;
-
+            Debug.Log("Generation complete. Refresh [SPACE] to start new generation.");
         }
 
 
 
-        InstantiateAllNodes();
 
 
     }
 
-    private void CreateMainPath()
+    private void OnGenerateFullLayout(InputAction.CallbackContext context)
     {
-
-        for (int i = 0; i < mainPath_nodeCount; i++)
+        if (!gen1_complete)
         {
-            Debug.Log("Loop iteration:" + i);
-            if (i == 0)
-            {
-                CreateNode(i - 1, Vector2.zero, -1, current_gen);
-
-                ExpandNodeAtRandom(i);
-                ReevaluateThisNodePositionAfterExpand(i);
-                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
-
-            }
-            else if (i == mainPath_nodeCount - 1)
-            {
-                AddNodesToParentHalls(i - 1);
-                ExpandNodeAtRandom(i);
-                ReevaluateThisNodePositionAfterExpand(i);
-
-            }
-            else
-            {
-                AddNodesToParentHalls(i - 1);
-                ExpandNodeAtRandom(i);
-                ReevaluateThisNodePositionAfterExpand(i);
-
-                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
-
-
-            }
-
-            InstantiateAllNodes();
+            StartCoroutine(GenerateLayout());
 
         }
+        else
+        {
+            Debug.Log("Generation complete. Refresh [SPACE] to start new generation.");
+        }
 
-        Debug.Log("End Node Index is now " + endNode_index);
+        /*
+        if (!gen1_complete)
+        {
+            currentlyGenerating = true;
+
+            Debug.Log("Creating Main Path...");
+            for (int i = 0; i < mainPath_nodeCount; i++) //generates the main path
+            {
+                if (i == 0) //make the start node
+                {
+                    CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
+                    SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+
+                }
+                else if (i == mainPath_nodeCount - 1) //makes the end node
+                {
+                    AddNodesToParentHalls(i - 1);
+                    current_gen++;
+                }
+                else //make the intermediate nodes
+                {
+                    AddNodesToParentHalls(i - 1);
+                    SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+                }
+
+            }
+
+            int gen1_startIndex = endNode_index;
+            
+            Debug.Log("Creating gen1 nodes from Main Path...");
+            for (int i = 0; i < mainPath_nodeCount; i++) //step through mainpath nodes, adding halls and nodes.
+            {
+                SelectAndAddRandomHallsToNode(i, neutral_hProb, 0, 3);
+                AddNodesToParentHalls(i);
 
 
+            }
+            current_gen++;
+            int gen1_endIndex = endNode_index - 1;
+
+
+            Debug.Log("gen1 nodes generation complete. gen1 Start Index="+gen1_startIndex+" End Index="+gen1_endIndex);
+            Debug.Log("node_array endNode_index:"+  endNode_index);
+            
+
+            gen1_complete = true;
+
+            InstantiateAllNodes();
+            currentlyGenerating = false;
+        }
+        else
+        {
+            Debug.Log("Generation complete. Refresh [SPACE] to start new generation.");
+        }
+        */
+
+
+
+    }
+    void OnRefresh(InputAction.CallbackContext context)
+    {
+
+        DestroyGridObjects();
+        //ResetCellMatrix();
+        endNode_index = 0;
+        pointerToGen0Node = 0;
+        current_gen = 0;
+        gen1_complete = false;
     }
 
     private void OnNodeSize(InputAction.CallbackContext context)
@@ -295,18 +335,15 @@ public class DungeonGenerator : MonoBehaviour
         ReevaluateOtherNodePositions(0);
 
         DestroyGridObjects();
-        ResetCellMatrix();
+        //ResetCellMatrix();
 
         InstantiateAllNodes();
 
-        //ResetGrid();
-        //UpdateGridData();
-        //RedrawGrid();
+
 
     }
 
-
-    private void ExpandNodeAtRandom(int nodeIndex)
+    private void ExpandNodeAtRandomAndOffset(int nodeIndex)
     {
         if (Random.value < room_prob)
         {
@@ -373,7 +410,7 @@ public class DungeonGenerator : MonoBehaviour
                     newOffset = Random.Range(-maxOffset, maxOffset + 1);
                     nodeData.offsetFromParentNode = new Vector2(originalOffset_x, originalOffset_y + newOffset);
 
-                    nodeData.halls_data.east.offsetFromNodeCenter = nodeData.halls_data.east.offsetFromNodeCenter + newOffset; //halway shift
+                    nodeData.halls_data.east.offsetFromNodeCenter = nodeData.halls_data.east.offsetFromNodeCenter - newOffset; //halway shift
 
                     break;
 
@@ -388,17 +425,6 @@ public class DungeonGenerator : MonoBehaviour
 
 
 
-    }
-
-    void OnRefresh(InputAction.CallbackContext context)
-    {
-        DestroyGridObjects();
-        ResetCellMatrix();
-        endNode_index = 0;
-        pointerToGen0Node = 0;
-        //CreateMainPath();
-
-        //InstantiateAllNodes();
     }
 
     private void InstantiateAllNodes()
@@ -495,8 +521,6 @@ public class DungeonGenerator : MonoBehaviour
     {
         int length = Random.Range(1, hall_maxLength + 1);
 
-
-
         int maxWidth;
         switch (direction)
         {
@@ -532,21 +556,21 @@ public class DungeonGenerator : MonoBehaviour
 
         int offset = Random.Range(-(maxWidth - width) / 2, ((maxWidth - width) / 2) + 1);
 
-        HallStats hallStats = new HallStats(length, width, offset, false);
+
 
         switch (direction)
         {
             case "north":
-                node_array[nodeIndex].halls_data.north = hallStats;
+                node_array[nodeIndex].halls_data.north = new HallStats(length, width, offset, false); ;
                 break;
             case "south":
-                node_array[nodeIndex].halls_data.south = hallStats;
+                node_array[nodeIndex].halls_data.south = new HallStats(length, width, offset, false); ;
                 break;
             case "east":
-                node_array[nodeIndex].halls_data.east = hallStats;
+                node_array[nodeIndex].halls_data.east = new HallStats(length, width, offset, false); ;
                 break;
             case "west":
-                node_array[nodeIndex].halls_data.west = hallStats;
+                node_array[nodeIndex].halls_data.west = new HallStats(length, width, offset, false); ;
                 break;
             default:
 
@@ -581,12 +605,16 @@ public class DungeonGenerator : MonoBehaviour
 
         HallStats entryHall;
 
+        int entryHallOffset;
+
         switch (hall_index)  //update parent node connection boolean AND add hallway entrance to created node
         {
             case 0:
                 node_array[parent_index].halls_data.north.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.north.width, 0, true);
+                entryHallOffset = (int)node_array[createdNodeIndex].offsetFromParentNode.x - node_array[parent_index].halls_data.north.offsetFromNodeCenter;
+
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.north.width, entryHallOffset, true);
 
                 node_array[createdNodeIndex].halls_data.south = entryHall;
 
@@ -594,7 +622,10 @@ public class DungeonGenerator : MonoBehaviour
             case 1:
                 node_array[parent_index].halls_data.south.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.south.width, 0, true);
+                entryHallOffset = -(int)node_array[createdNodeIndex].offsetFromParentNode.x - node_array[parent_index].halls_data.south.offsetFromNodeCenter;
+
+
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.south.width, entryHallOffset, true);
 
                 node_array[createdNodeIndex].halls_data.north = entryHall;
 
@@ -602,7 +633,9 @@ public class DungeonGenerator : MonoBehaviour
             case 2:
                 node_array[parent_index].halls_data.east.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.east.width, 0, true);
+                entryHallOffset = -(int)node_array[createdNodeIndex].offsetFromParentNode.y - node_array[parent_index].halls_data.east.offsetFromNodeCenter;
+
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.east.width, entryHallOffset, true);
 
                 node_array[createdNodeIndex].halls_data.west = entryHall;
 
@@ -610,7 +643,10 @@ public class DungeonGenerator : MonoBehaviour
             case 3:
                 node_array[parent_index].halls_data.west.isConnected = true;
 
-                entryHall = new HallStats(1, node_array[parent_index].halls_data.west.width, 0, true);
+
+                entryHallOffset = (int)node_array[createdNodeIndex].offsetFromParentNode.y - node_array[parent_index].halls_data.west.offsetFromNodeCenter;
+
+                entryHall = new HallStats(1, node_array[parent_index].halls_data.west.width, entryHallOffset, true);
 
                 node_array[createdNodeIndex].halls_data.east = entryHall;
                 break;
@@ -622,11 +658,6 @@ public class DungeonGenerator : MonoBehaviour
         //Debug.Log("Added node to hall index:" + hall_index);
 
     }
-
-
-
-
-
 
 
     private Vector2[] GetOpenHallwayPositions(int nodeIndex)
@@ -650,7 +681,7 @@ public class DungeonGenerator : MonoBehaviour
         {
             int offset_y = nodeData.walls_offset.south + nodeData.halls_data.south.length + default_wallsOffset.north + 2; //the +2 accounts for the wall cell and moving to the actual node position
             int offset_x = nodeData.halls_data.south.offsetFromNodeCenter;
-            Vector2 newNodeOffset = new Vector2(offset_x, -offset_y);
+            Vector2 newNodeOffset = new Vector2(-offset_x, -offset_y);
 
             //positionsArray[1] = nodeData.offsetFromParentNode + GetParentNodePosition(nodeIndex) + newNodeOffset;
             positionsArray[1] = newNodeOffset;
@@ -855,7 +886,7 @@ public class DungeonGenerator : MonoBehaviour
                     thisCellType = cellType.node;
                 }
 
-                CheckCellAndInstantiate(i, j, thisCellType);
+                CheckCellAndInstantiate(i, j, thisCellType, node_index);
 
             }
 
@@ -864,21 +895,19 @@ public class DungeonGenerator : MonoBehaviour
         //Set Node Walls
         for (int i = (startX - 1); i <= endX + 1; i++)
         {
-            CheckCellAndInstantiate(i, startZ - 1, cellType.wall);
-            CheckCellAndInstantiate(i, endZ + 1, cellType.wall);
+            CheckCellAndInstantiate(i, startZ - 1, cellType.wall, node_index);
+            CheckCellAndInstantiate(i, endZ + 1, cellType.wall, node_index);
 
-            //cellMatrix[i, startZ - 1] = new cellData(cellType.wall, cellMatrix[i, startZ - 1].cell_obj);
-            //cellMatrix[i, endZ + 1] = new cellData(cellType.wall, cellMatrix[i, endZ + 1].cell_obj);
+
         }
 
 
         for (int j = startZ - 1; j < endZ + 1; j++)
         {
-            CheckCellAndInstantiate(startX - 1, j, cellType.wall);
-            CheckCellAndInstantiate(endX + 1, j, cellType.wall);
+            CheckCellAndInstantiate(startX - 1, j, cellType.wall, node_index);
+            CheckCellAndInstantiate(endX + 1, j, cellType.wall, node_index);
 
-            //cellMatrix[startX - 1, j] = new cellData(cellType.wall, cellMatrix[startX - 1, j].cell_obj);
-            //cellMatrix[endX + 1, j] = new cellData(cellType.wall, cellMatrix[endX + 1, j].cell_obj);
+
         }
 
         //Set Hall Floors and Walls
@@ -892,41 +921,36 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = startX; i <= endX; i++)
             {
-                CheckCellAndInstantiate(i, j, cellType.hall);
+                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
 
-                //cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
             }
 
             //hall walls
-            CheckCellAndInstantiate(startX - 1, j, cellType.wall);
-            CheckCellAndInstantiate(endX + 1, j, cellType.wall);
+            CheckCellAndInstantiate(startX - 1, j, cellType.wall, node_index);
+            CheckCellAndInstantiate(endX + 1, j, cellType.wall, node_index);
 
-            //cellMatrix[startX - 1, j] = new cellData(cellType.wall, cellMatrix[startX - 1, j].cell_obj);
-            //cellMatrix[endX + 1, j] = new cellData(cellType.wall, cellMatrix[endX + 1, j].cell_obj);
         }
 
 
         //south
-        startX = (int)thisNodePosition.x + (int)thisNode.halls_data.south.offsetFromNodeCenter - (int)(thisNode.halls_data.south.width / 2);
+        startX = (int)thisNodePosition.x - (int)thisNode.halls_data.south.offsetFromNodeCenter - (int)(thisNode.halls_data.south.width / 2);
         endX = startX + (int)thisNode.halls_data.south.width - 1;
         startZ = (int)thisNodePosition.y - ((int)thisNode.walls_offset.south + 1);
         endZ = startZ - ((int)thisNode.halls_data.south.length - 1);
+
 
         for (int j = startZ; j >= endZ; j--)
         {
             for (int i = startX; i <= endX; i++)
             {
 
-                CheckCellAndInstantiate(i, j, cellType.hall);
+                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
 
-                //cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
             }
 
-            CheckCellAndInstantiate(startX - 1, j, cellType.wall);
-            CheckCellAndInstantiate(endX + 1, j, cellType.wall);
+            CheckCellAndInstantiate(startX - 1, j, cellType.wall, node_index);
+            CheckCellAndInstantiate(endX + 1, j, cellType.wall, node_index);
 
-            //cellMatrix[startX - 1, j] = new cellData(cellType.wall, cellMatrix[startX - 1, j].cell_obj);
-            //cellMatrix[endX + 1, j] = new cellData(cellType.wall, cellMatrix[endX + 1, j].cell_obj);
         }
 
         //east
@@ -940,21 +964,18 @@ public class DungeonGenerator : MonoBehaviour
             for (int i = startX; i <= endX; i++)
             {
 
-                CheckCellAndInstantiate(i, j, cellType.hall);
-                //cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
+                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
 
-                CheckCellAndInstantiate(i, startZ + 1, cellType.wall);
-                CheckCellAndInstantiate(i, endZ - 1, cellType.wall);
+                CheckCellAndInstantiate(i, startZ + 1, cellType.wall, node_index);
+                CheckCellAndInstantiate(i, endZ - 1, cellType.wall, node_index);
 
-                //cellMatrix[i, startZ + 1] = new cellData(cellType.wall, cellMatrix[i, startZ + 1].cell_obj);
-                //cellMatrix[i, endZ - 1] = new cellData(cellType.wall, cellMatrix[i, endZ - 1].cell_obj);
 
             }
 
 
         }
 
-        //west
+        //west hall
         startX = (int)thisNodePosition.x - ((int)thisNode.walls_offset.west + 1);
         endX = startX - ((int)thisNode.halls_data.west.length - 1);
         startZ = (int)thisNodePosition.y + (int)thisNode.halls_data.west.offsetFromNodeCenter + (int)(thisNode.halls_data.west.width / 2);
@@ -964,15 +985,12 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = startX; i >= endX; i--)
             {
-                CheckCellAndInstantiate(i, j, cellType.hall);
+                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
 
-                //cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
 
-                CheckCellAndInstantiate(i, startZ + 1, cellType.wall);
-                CheckCellAndInstantiate(i, endZ - 1, cellType.wall);
+                CheckCellAndInstantiate(i, startZ + 1, cellType.wall, node_index);
+                CheckCellAndInstantiate(i, endZ - 1, cellType.wall, node_index);
 
-                //cellMatrix[i, startZ + 1] = new cellData(cellType.wall, cellMatrix[i, startZ + 1].cell_obj);
-                //cellMatrix[i, endZ - 1] = new cellData(cellType.wall, cellMatrix[i, endZ - 1].cell_obj);
 
             }
 
@@ -982,7 +1000,7 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-    private void CheckCellAndInstantiate(int i, int j, cellType _cellType)
+    private void CheckCellAndInstantiate(int i, int j, cellType thisCellType, int nodeIndex)
     {
         if (cellMatrix[i, j].cell_obj == null)
         {
@@ -990,18 +1008,17 @@ public class DungeonGenerator : MonoBehaviour
             GameObject currentCell = Instantiate(grid_prefab, gridPoint, Quaternion.identity);
             currentCell.transform.SetParent(gridContainer.transform);
 
-            cellMatrix[i, j] = new cellData(_cellType, currentCell);
+            cellMatrix[i, j] = new cellData(thisCellType, currentCell);
 
         }
-        else if ((_cellType == cellType.hall || _cellType == cellType.node) && cellMatrix[i, j].type == cellType.wall)
+        else if ((thisCellType != cellType.wall) && cellMatrix[i, j].type == cellType.wall)
         {
-            cellMatrix[i, j].type = _cellType;
+            cellMatrix[i, j].type = thisCellType;
         }
 
 
-        UpdateCellPrefabParameters(i, j);
+        UpdateCellPrefabParameters(i, j, nodeIndex);
     }
-
 
     private void DestroyGridObjects()
     {
@@ -1012,138 +1029,7 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    private void UpdateGridData()
-    {
-        for (int node_index = 0; node_index < endNode_index; node_index++)
-        {
-            //Debug.Log("Updating grid for node:" + node_index);
 
-            NodeData thisNode = node_array[node_index];
-            //get node parent position
-            Vector2 parentNode_position = GetParentNodePosition(node_index);
-            Vector2 thisNodePosition = thisNode.offsetFromParentNode + parentNode_position;
-
-
-
-            int startZ;
-            int endZ;
-            int startX;
-            int endX;
-            //Set node floor
-
-            startZ = (int)thisNodePosition.y - thisNode.walls_offset.south;
-            endZ = (int)thisNodePosition.y + thisNode.walls_offset.north;
-            startX = (int)thisNodePosition.x - thisNode.walls_offset.west;
-            endX = (int)thisNodePosition.x + thisNode.walls_offset.east;
-
-            for (int j = startZ; j <= endZ; j++)
-            {
-                for (int i = startX; i <= endX; i++)
-                {
-                    cellMatrix[i, j] = new cellData(cellType.node, cellMatrix[i, j].cell_obj);
-                }
-
-            }
-
-            //Set Node Walls
-            for (int i = (startX - 1); i <= endX + 1; i++)
-            {
-                cellMatrix[i, startZ - 1] = new cellData(cellType.wall, cellMatrix[i, startZ - 1].cell_obj);
-                cellMatrix[i, endZ + 1] = new cellData(cellType.wall, cellMatrix[i, endZ + 1].cell_obj);
-            }
-
-
-            for (int j = startZ - 1; j < endZ + 1; j++)
-            {
-                cellMatrix[startX - 1, j] = new cellData(cellType.wall, cellMatrix[startX - 1, j].cell_obj);
-                cellMatrix[endX + 1, j] = new cellData(cellType.wall, cellMatrix[endX + 1, j].cell_obj);
-            }
-
-            //Set Hall Floors and Walls
-            //north
-            startX = (int)thisNodePosition.x + (int)thisNode.halls_data.north.offsetFromNodeCenter - (int)(thisNode.halls_data.north.width / 2);
-            endX = startX + (int)thisNode.halls_data.north.width - 1;
-            startZ = (int)thisNodePosition.y + (int)thisNode.walls_offset.north + 1;
-            endZ = startZ + (int)thisNode.halls_data.north.length - 1;
-
-            for (int j = startZ; j <= endZ; j++) //hall floor
-            {
-                for (int i = startX; i <= endX; i++)
-                {
-                    cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
-                }
-
-                //hall walls
-                cellMatrix[startX - 1, j] = new cellData(cellType.wall, cellMatrix[startX - 1, j].cell_obj);
-                cellMatrix[endX + 1, j] = new cellData(cellType.wall, cellMatrix[endX + 1, j].cell_obj);
-            }
-
-
-            //south
-            startX = (int)thisNodePosition.x + (int)thisNode.halls_data.south.offsetFromNodeCenter - (int)(thisNode.halls_data.south.width / 2);
-            endX = startX + (int)thisNode.halls_data.south.width - 1;
-            startZ = (int)thisNodePosition.y - ((int)thisNode.walls_offset.south + 1);
-            endZ = startZ - ((int)thisNode.halls_data.south.length - 1);
-
-            for (int j = startZ; j >= endZ; j--)
-            {
-                for (int i = startX; i <= endX; i++)
-                {
-                    cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
-                }
-
-                cellMatrix[startX - 1, j] = new cellData(cellType.wall, cellMatrix[startX - 1, j].cell_obj);
-                cellMatrix[endX + 1, j] = new cellData(cellType.wall, cellMatrix[endX + 1, j].cell_obj);
-            }
-
-            //east
-            startX = (int)thisNodePosition.x + (int)thisNode.walls_offset.east + 1;
-            endX = startX + (int)thisNode.halls_data.east.length - 1;
-            startZ = (int)thisNodePosition.y - (int)thisNode.halls_data.east.offsetFromNodeCenter + (int)(thisNode.halls_data.east.width / 2);
-            endZ = startZ - ((int)thisNode.halls_data.east.width - 1);
-
-            for (int j = startZ; j >= endZ; j--)
-            {
-                for (int i = startX; i <= endX; i++)
-                {
-                    cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
-
-                    cellMatrix[i, startZ + 1] = new cellData(cellType.wall, cellMatrix[i, startZ + 1].cell_obj);
-                    cellMatrix[i, endZ - 1] = new cellData(cellType.wall, cellMatrix[i, endZ - 1].cell_obj);
-
-                }
-
-
-            }
-
-            //west
-            startX = (int)thisNodePosition.x - ((int)thisNode.walls_offset.west + 1);
-            endX = startX - ((int)thisNode.halls_data.west.length - 1);
-            startZ = (int)thisNodePosition.y + (int)thisNode.halls_data.west.offsetFromNodeCenter + (int)(thisNode.halls_data.west.width / 2);
-            endZ = startZ - ((int)thisNode.halls_data.west.width - 1);
-
-            for (int j = startZ; j >= endZ; j--)
-            {
-                for (int i = startX; i >= endX; i--)
-                {
-                    cellMatrix[i, j] = new cellData(cellType.hall, cellMatrix[i, j].cell_obj);
-
-                    cellMatrix[i, startZ + 1] = new cellData(cellType.wall, cellMatrix[i, startZ + 1].cell_obj);
-                    cellMatrix[i, endZ - 1] = new cellData(cellType.wall, cellMatrix[i, endZ - 1].cell_obj);
-
-                }
-
-
-            }
-
-
-        }
-
-
-
-
-
-    }
     private void ResetCellMatrix()
     {
         for (int j = 0; j < gridHeight; j++)
@@ -1156,18 +1042,8 @@ public class DungeonGenerator : MonoBehaviour
         }
 
     }
-    private void RedrawGrid()
-    {
 
-        for (int j = 0; j < gridHeight; j++)
-        {
-            for (int i = 0; i < gridWidth; i++)
-            {
-                UpdateCellPrefabParameters(i, j);
-            }
-        }
 
-    }
 
     private Vector2 GetParentNodePosition(int node_index)
     {
@@ -1189,7 +1065,7 @@ public class DungeonGenerator : MonoBehaviour
         return parentPos;
     }
 
-    private void UpdateCellPrefabParameters(int i, int j)
+    private void UpdateCellPrefabParameters(int i, int j, int nodeIndex)
     {
         TextMeshProUGUI _tmp = cellMatrix[i, j].cell_obj.GetComponentInChildren<TextMeshProUGUI>();
 
@@ -1206,15 +1082,15 @@ public class DungeonGenerator : MonoBehaviour
                     materialToUse = grid_greenMat;
                     break;
                 case cellType.wall:
-                    text = "W";
+                    text = nodeIndex.ToString();
                     materialToUse = grid_whiteMat;
                     break;
                 case cellType.node:
-                    text = "N";
+                    text = nodeIndex.ToString();
                     materialToUse = grid_blackMat;
                     break;
                 case cellType.hall:
-                    text = "H";
+                    text = nodeIndex.ToString();
                     materialToUse = grid_greyMat;
                     break;
                 case cellType.start:
@@ -1291,7 +1167,7 @@ public class DungeonGenerator : MonoBehaviour
         //Debug.Log("Added node " + endNodeIndex + " to Node " + parent_index);
         //Debug.Log("Creating Node:" + endNode_index + " at offset " + offset);
 
-        ExpandNodeAtRandom(endNode_index);
+        ExpandNodeAtRandomAndOffset(endNode_index);
         ReevaluateThisNodePositionAfterExpand(endNode_index);
 
         endNode_index++; //increase End Node Index by 1
@@ -1300,6 +1176,72 @@ public class DungeonGenerator : MonoBehaviour
     }
 
 
+    IEnumerator GenerateLayout()
+    {
+        currentlyGenerating = true;
+        Debug.Log("Generation requested.");
 
+        yield return new WaitForSeconds(.1f);
+
+        Debug.Log("Creating Main Path...");
+        for (int i = 0; i < mainPath_nodeCount; i++) //generates the main path
+        {
+            if (i == 0) //make the start node
+            {
+                CreateNode(i - 1, Vector2.zero, -1, current_gen); //puts node at this offset
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+
+            }
+            else if (i == mainPath_nodeCount - 1) //makes the end node
+            {
+                AddNodesToParentHalls(i - 1);
+                current_gen++;
+            }
+            else //make the intermediate nodes
+            {
+                AddNodesToParentHalls(i - 1);
+                SelectAndAddRandomHallsToNode(i, sw_hprob, 1, 1);
+            }
+            yield return null; // Lets Unity process a frame
+
+        }
+
+        int gen1_startIndex = endNode_index;
+
+        Debug.Log("Creating gen1 nodes from Main Path...");
+        for (int i = 0; i < mainPath_nodeCount; i++) //step through mainpath nodes, adding halls and nodes.
+        {
+            SelectAndAddRandomHallsToNode(i, neutral_hProb, 0, 3);
+            AddNodesToParentHalls(i);
+
+            yield return null; // Lets Unity process a frame
+        }
+        current_gen++;
+        int gen1_endIndex = endNode_index - 1;
+
+
+        Debug.Log("gen1 nodes generation complete. gen1 Start Index=" + gen1_startIndex + " End Index=" + gen1_endIndex);
+        Debug.Log("node_array endNode_index:" + endNode_index);
+
+
+        gen1_complete = true;
+
+        StartCoroutine(InstantiateAllNodesCoroutine());
+        yield return null; // Lets Unity process a frame
+
+    }
+
+
+    IEnumerator InstantiateAllNodesCoroutine()
+    {
+        for (int i = 0; i < endNode_index; i++)
+        {
+            InstantiateNodeLayout(i);
+            yield return null;
+        }
+        currentlyGenerating = false;
+
+
+    }
 
 }
