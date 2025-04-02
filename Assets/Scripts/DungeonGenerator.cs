@@ -9,6 +9,8 @@ using UnityEngine.UIElements;
 
 public class DungeonGenerator : MonoBehaviour
 {
+    public GridMeshGenerator gridMeshGenerator;
+
     [SerializeField] GameObject grid_prefab;
     [SerializeField] int grid_halfWidth;
     [SerializeField] int grid_halfHeight;
@@ -45,19 +47,12 @@ public class DungeonGenerator : MonoBehaviour
     private NodeData[] node_array;
     private cellData[,] cellMatrix;
 
+    private cellType[,] c_type_matrix;
+
     GameObject gridContainer;
 
 
-    private enum cellType
-    {
-        undef,
-        node,
-        wall,
-        hall,
-        start,
-        end
-
-    }
+  
 
     private struct cellData
     {
@@ -152,9 +147,26 @@ public class DungeonGenerator : MonoBehaviour
 
         cellMatrix = new cellData[gridWidth, gridHeight];
 
+        c_type_matrix = new cellType[gridWidth, gridHeight];
+
+        InitializeCTypeMatrix();
+
         neutral_hProb = new hallProbability(1, 1, 1, 1);
         sw_hprob = new hallProbability(1, 3, 3, 1);
 
+    }
+
+
+    private void InitializeCTypeMatrix()
+    {
+        for (int j=0; j < gridHeight; j++)
+        {
+            for(int i=0; i<gridWidth; i++)
+            {
+                c_type_matrix[i, j] = cellType.undef;
+            }
+        }
+        Debug.Log("c_type_matrix initialized. c_type_matrix[0,0]=" + c_type_matrix[0,0].ToString());
     }
 
     private void OnCreateNextNode(InputAction.CallbackContext context)
@@ -250,6 +262,7 @@ public class DungeonGenerator : MonoBehaviour
         Debug.Log("Destroying Grid Objects.");
         StartCoroutine(DestroyGridObjectsCoR());
 
+        InitializeCTypeMatrix();
         //ResetCellMatrix();
         endNode_index = 0;
         pointerToGen0Node = 0;
@@ -911,6 +924,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private void CheckCellAndInstantiate(int i, int j, cellType thisCellType, int nodeIndex)
     {
+        
         if (cellMatrix[i, j].cell_obj == null)
         {
             Vector3 gridPoint = new Vector3(i - grid_halfWidth, 0f, j - grid_halfHeight);
@@ -924,10 +938,22 @@ public class DungeonGenerator : MonoBehaviour
         {
             cellMatrix[i, j].type = thisCellType;
         }
-
+        
+        //this update the c_type_matrix. Only writes if the cell is undef or if it's a wall
+        
+        if (c_type_matrix[i, j] == cellType.wall || c_type_matrix[i, j] == cellType.undef)
+        {
+            Debug.Log("Setting matrix " + i + "," + j + " to " + thisCellType.ToString());
+            c_type_matrix[i, j] = thisCellType;
+        }
+        
 
         UpdateCellPrefabParameters(i, j, nodeIndex);
+
+        
     }
+    
+
 
 
 
@@ -1138,18 +1164,48 @@ public class DungeonGenerator : MonoBehaviour
         Debug.Log("Beginning Instantiation.");
 
         yield return null;
+
+        
+
+
+        ///////////////////////////////////////////////
+
+
+
+
         StartCoroutine(InstantiateAllNodesCoroutine());
 
     }
 
+    /*
+    IEnumerator WriteAllNodestoMatrix()
+    {
+        for (int i = 0;i< endNode_index;i++) 
+        {
+            WriteNodeToMatrix(i);
+            yield return null;
+        }
+
+    }
+    */
 
     IEnumerator InstantiateAllNodesCoroutine()
     {
+
+       
+
         for (int i = 0; i < endNode_index; i++)
         {
             InstantiateNodeLayout(i);
             yield return null;
         }
+
+        //GridMeshGenerator call should be here. It should pass c_type_array and a Vector2 position. The Vector2 x,y would map to (x,0,y) in world space.
+        //gridMeshGenerator.GenerateMesh(c_type_matrix, Vector2.zero);
+
+        gridMeshGenerator.GenerateMesh(c_type_matrix, new Vector2(-grid_halfWidth+100, -grid_halfHeight+100));
+
+
         currentlyGenerating = false;
 
 

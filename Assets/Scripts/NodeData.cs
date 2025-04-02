@@ -1,5 +1,15 @@
 using UnityEngine;
 
+public enum cellType
+{
+    undef,
+    node,
+    wall,
+    hall,
+    start,
+    end
+
+}
 public struct WallsOffset
 {
     public int north;
