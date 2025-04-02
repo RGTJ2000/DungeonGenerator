@@ -145,7 +145,7 @@ public class DungeonGenerator : MonoBehaviour
 
         origin_position = new Vector2(grid_halfWidth, grid_halfHeight);
 
-        cellMatrix = new cellData[gridWidth, gridHeight];
+        //cellMatrix = new cellData[gridWidth, gridHeight];
 
         c_type_matrix = new cellType[gridWidth, gridHeight];
 
@@ -219,9 +219,9 @@ public class DungeonGenerator : MonoBehaviour
 
             }
 
-
-            StartCoroutine(InstantiateAllNodesCoroutine());
-
+            gridMeshGenerator.ClearMesh();
+            WriteAllNodestoMatrix();
+            gridMeshGenerator.GenerateMesh(c_type_matrix, new Vector2(-grid_halfWidth, -grid_halfHeight));
         }
         else
         {
@@ -260,10 +260,9 @@ public class DungeonGenerator : MonoBehaviour
     void OnRefresh(InputAction.CallbackContext context)
     {
         Debug.Log("Destroying Grid Objects.");
-        StartCoroutine(DestroyGridObjectsCoR());
-
+        gridMeshGenerator.ClearMesh();
         InitializeCTypeMatrix();
-        //ResetCellMatrix();
+        
         endNode_index = 0;
         pointerToGen0Node = 0;
         current_gen = 0;
@@ -285,13 +284,13 @@ public class DungeonGenerator : MonoBehaviour
 
             node_array[nodeIndex].walls_offset = new WallsOffset(height / 2, height / 2, width / 2, width / 2);
 
-            OffsetNodeFromHallway(nodeIndex);
+            OffsetNodeFromParentHallway(nodeIndex);
         }
 
 
     }
 
-    private void OffsetNodeFromHallway(int nodeIndex)
+    private void OffsetNodeFromParentHallway(int nodeIndex)
     {
 
 
@@ -581,7 +580,6 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
-
     private Vector2[] GetOpenHallwayPositions(int nodeIndex)
     {
         Vector2[] positionsArray = new Vector2[] { Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero };
@@ -761,20 +759,18 @@ public class DungeonGenerator : MonoBehaviour
 
             }
 
-            //Debug.Log("Node:" + nodeIndex + " expanded position set at " + newNodeOffset);
 
         }
 
 
     }
 
-    private void InstantiateNodeLayout(int node_index)
+    private void WriteNodeToMatrix(int node_index)
     {
         NodeData thisNode = node_array[node_index];
         //get node parent position
         Vector2 parentNode_position = GetParentNodePosition(node_index);
         Vector2 thisNodePosition = thisNode.offsetFromParentNode + parentNode_position;
-
 
 
         int startZ;
@@ -807,8 +803,8 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     thisCellType = cellType.node;
                 }
+                CheckCellTypeAndWrite(i,j, thisCellType);
 
-                CheckCellAndInstantiate(i, j, thisCellType, node_index);
 
             }
 
@@ -817,8 +813,8 @@ public class DungeonGenerator : MonoBehaviour
         //Set Node Walls
         for (int i = (startX - 1); i <= endX + 1; i++)
         {
-            CheckCellAndInstantiate(i, startZ - 1, cellType.wall, node_index);
-            CheckCellAndInstantiate(i, endZ + 1, cellType.wall, node_index);
+            CheckCellTypeAndWrite(i, startZ - 1, cellType.wall);
+            CheckCellTypeAndWrite(i, endZ + 1, cellType.wall);
 
 
         }
@@ -826,8 +822,8 @@ public class DungeonGenerator : MonoBehaviour
 
         for (int j = startZ - 1; j < endZ + 1; j++)
         {
-            CheckCellAndInstantiate(startX - 1, j, cellType.wall, node_index);
-            CheckCellAndInstantiate(endX + 1, j, cellType.wall, node_index);
+            CheckCellTypeAndWrite(startX - 1, j, cellType.wall);
+            CheckCellTypeAndWrite(endX + 1, j, cellType.wall);
 
 
         }
@@ -843,13 +839,13 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = startX; i <= endX; i++)
             {
-                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
+                CheckCellTypeAndWrite(i, j, cellType.hall);
 
             }
 
             //hall walls
-            CheckCellAndInstantiate(startX - 1, j, cellType.wall, node_index);
-            CheckCellAndInstantiate(endX + 1, j, cellType.wall, node_index);
+            CheckCellTypeAndWrite(startX - 1, j, cellType.wall);
+            CheckCellTypeAndWrite(endX + 1, j, cellType.wall);
 
         }
 
@@ -866,12 +862,12 @@ public class DungeonGenerator : MonoBehaviour
             for (int i = startX; i <= endX; i++)
             {
 
-                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
+                CheckCellTypeAndWrite(i, j, cellType.hall);
 
             }
 
-            CheckCellAndInstantiate(startX - 1, j, cellType.wall, node_index);
-            CheckCellAndInstantiate(endX + 1, j, cellType.wall, node_index);
+            CheckCellTypeAndWrite(startX - 1, j, cellType.wall);
+            CheckCellTypeAndWrite(endX + 1, j, cellType.wall);
 
         }
 
@@ -886,10 +882,10 @@ public class DungeonGenerator : MonoBehaviour
             for (int i = startX; i <= endX; i++)
             {
 
-                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
+                CheckCellTypeAndWrite(i, j, cellType.hall);
 
-                CheckCellAndInstantiate(i, startZ + 1, cellType.wall, node_index);
-                CheckCellAndInstantiate(i, endZ - 1, cellType.wall, node_index);
+                CheckCellTypeAndWrite(i, startZ + 1, cellType.wall);
+                CheckCellTypeAndWrite(i, endZ - 1, cellType.wall);
 
 
             }
@@ -907,11 +903,11 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = startX; i >= endX; i--)
             {
-                CheckCellAndInstantiate(i, j, cellType.hall, node_index);
+                CheckCellTypeAndWrite(i, j, cellType.hall);
 
 
-                CheckCellAndInstantiate(i, startZ + 1, cellType.wall, node_index);
-                CheckCellAndInstantiate(i, endZ - 1, cellType.wall, node_index);
+                CheckCellTypeAndWrite(i, startZ + 1, cellType.wall);
+                CheckCellTypeAndWrite(i, endZ - 1, cellType.wall);
 
 
             }
@@ -919,57 +915,26 @@ public class DungeonGenerator : MonoBehaviour
 
         }
 
-
     }
 
-    private void CheckCellAndInstantiate(int i, int j, cellType thisCellType, int nodeIndex)
+
+    private void CheckCellTypeAndWrite(int i, int j, cellType thisCellType)
     {
-        
-        if (cellMatrix[i, j].cell_obj == null)
-        {
-            Vector3 gridPoint = new Vector3(i - grid_halfWidth, 0f, j - grid_halfHeight);
-            GameObject currentCell = Instantiate(grid_prefab, gridPoint, Quaternion.identity);
-            currentCell.transform.SetParent(gridContainer.transform);
-
-            cellMatrix[i, j] = new cellData(thisCellType, currentCell);
-
-        }
-        else if ((thisCellType != cellType.wall) && cellMatrix[i, j].type == cellType.wall)
-        {
-            cellMatrix[i, j].type = thisCellType;
-        }
-        
-        //this update the c_type_matrix. Only writes if the cell is undef or if it's a wall
-        
+        //this updates the c_type_matrix. Only writes if the cell is undef or if it's a wall
         if (c_type_matrix[i, j] == cellType.wall || c_type_matrix[i, j] == cellType.undef)
         {
-            Debug.Log("Setting matrix " + i + "," + j + " to " + thisCellType.ToString());
             c_type_matrix[i, j] = thisCellType;
         }
-        
 
-        UpdateCellPrefabParameters(i, j, nodeIndex);
-
-        
     }
+
+ 
     
 
 
 
 
 
-    private void ResetCellMatrix()
-    {
-        for (int j = 0; j < gridHeight; j++)
-        {
-            for (int i = 0; i < gridWidth; i++)
-            {
-                cellMatrix[i, j] = new cellData(cellType.undef, null);
-                //cellMatrix[i, j] = new cellData(cellType.undef, cellMatrix[i, j].cell_obj);
-            }
-        }
-
-    }
 
 
 
@@ -993,57 +958,7 @@ public class DungeonGenerator : MonoBehaviour
         return parentPos;
     }
 
-    private void UpdateCellPrefabParameters(int i, int j, int nodeIndex)
-    {
-        TextMeshProUGUI _tmp = cellMatrix[i, j].cell_obj.GetComponentInChildren<TextMeshProUGUI>();
-
-        Material materialToUse;
-
-        if (_tmp != null)
-        {
-            string text;
-
-            switch (cellMatrix[i, j].type)
-            {
-                case cellType.undef:
-                    text = "UD";
-                    materialToUse = grid_greenMat;
-                    break;
-                case cellType.wall:
-                    text = nodeIndex.ToString();
-                    materialToUse = grid_whiteMat;
-                    break;
-                case cellType.node:
-                    text = nodeIndex.ToString();
-                    materialToUse = grid_blackMat;
-                    break;
-                case cellType.hall:
-                    text = nodeIndex.ToString();
-                    materialToUse = grid_greyMat;
-                    break;
-                case cellType.start:
-                    text = "S";
-                    materialToUse = grid_startMat;
-                    break;
-                case cellType.end:
-                    text = "E";
-                    materialToUse = grid_endMat;
-                    break;
-
-                default:
-                    text = "X";
-                    materialToUse = grid_greenMat;
-                    break;
-            }
-
-            cellMatrix[i, j].cell_obj.GetComponent<MeshRenderer>().material = materialToUse;
-            _tmp.text = text;
-        }
-        else
-        {
-            Debug.Log("TextMeshPro component not found.");
-        }
-    }
+ 
 
 
     private int CreateNode(int parent_index, Vector2 offset, int hallIndex, int gen)
@@ -1165,67 +1080,29 @@ public class DungeonGenerator : MonoBehaviour
 
         yield return null;
 
-        
 
 
-        ///////////////////////////////////////////////
+        WriteAllNodestoMatrix();
 
-
-
-
-        StartCoroutine(InstantiateAllNodesCoroutine());
-
-    }
-
-    /*
-    IEnumerator WriteAllNodestoMatrix()
-    {
-        for (int i = 0;i< endNode_index;i++) 
-        {
-            WriteNodeToMatrix(i);
-            yield return null;
-        }
-
-    }
-    */
-
-    IEnumerator InstantiateAllNodesCoroutine()
-    {
-
-       
-
-        for (int i = 0; i < endNode_index; i++)
-        {
-            InstantiateNodeLayout(i);
-            yield return null;
-        }
-
-        //GridMeshGenerator call should be here. It should pass c_type_array and a Vector2 position. The Vector2 x,y would map to (x,0,y) in world space.
-        //gridMeshGenerator.GenerateMesh(c_type_matrix, Vector2.zero);
-
-        gridMeshGenerator.GenerateMesh(c_type_matrix, new Vector2(-grid_halfWidth+100, -grid_halfHeight+100));
-
+        gridMeshGenerator.GenerateMesh(c_type_matrix, new Vector2(-grid_halfWidth, -grid_halfHeight));
 
         currentlyGenerating = false;
 
 
     }
 
-    IEnumerator DestroyGridObjectsCoR()
+    
+   private void WriteAllNodestoMatrix()
     {
-        Debug.Log("Destroying " + gridContainer.transform.childCount);
-        yield return null;
-
-
-
-
-        foreach (Transform child in gridContainer.transform)
+        for (int i = 0;i< endNode_index;i++) 
         {
-            Destroy(child.gameObject);
+            WriteNodeToMatrix(i);
         }
 
-        Debug.Log("Grid Objects destroyed.");
     }
+    
+
+   
 
 
 }
