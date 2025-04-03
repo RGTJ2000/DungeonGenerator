@@ -877,7 +877,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1402035978
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1015,7 +1015,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1904833431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1104,17 +1104,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridMeshGenerator: {fileID: 730263079}
   grid_prefab: {fileID: 6165363417885440625, guid: 1beda99ce311c3c48ba45a52a7854ad8, type: 3}
-  grid_halfWidth: 600
-  grid_halfHeight: 500
+  grid_halfWidth: 1000
+  grid_halfHeight: 1000
   grid_greenMat: {fileID: 2100000, guid: 6b76590bd69524f488750bb65da2b35a, type: 2}
   grid_blackMat: {fileID: 2100000, guid: 310d6ad1ed10bd94fa78bb8677fe39e0, type: 2}
   grid_whiteMat: {fileID: 2100000, guid: 96d55889504cc8e4dbce38542b3db357, type: 2}
   grid_greyMat: {fileID: 2100000, guid: 56b9d5a06dbad6f418d9445b5585c238, type: 2}
   grid_startMat: {fileID: 2100000, guid: b22efeb5f095acd4f93629aa856be627, type: 2}
   grid_endMat: {fileID: 2100000, guid: 82890fde646f2354aa3311a41cec8db3, type: 2}
-  max_numberOfNodes: 100
+  max_numberOfNodes: 1000
   current_gen: 0
-  mainPath_nodeCount: 15
+  mainPath_nodeCount: 20
   hall_maxLength: 40
   hall_minWidth: 3
   hall_maxWidth: 10

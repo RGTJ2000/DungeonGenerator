@@ -928,15 +928,6 @@ public class DungeonGenerator : MonoBehaviour
 
     }
 
- 
-    
-
-
-
-
-
-
-
 
     private Vector2 GetParentNodePosition(int node_index)
     {
@@ -1081,16 +1072,48 @@ public class DungeonGenerator : MonoBehaviour
         yield return null;
 
 
-
+        //write the nodes to c_type_matrix
         WriteAllNodestoMatrix();
 
-        gridMeshGenerator.GenerateMesh(c_type_matrix, new Vector2(-grid_halfWidth, -grid_halfHeight));
 
+        //Crop layout and render mesh
+        cellType[,] croppedMatrix = ReturnCroppedLayout(c_type_matrix);
+        Vector2 croppedOffset = new Vector2(croppedMatrix.GetLength(0)/2, croppedMatrix.GetLength(1)/2);
+        gridMeshGenerator.GenerateMesh(croppedMatrix, -croppedOffset);
+
+        //reset Generating flag to false
         currentlyGenerating = false;
 
 
     }
 
+
+    private cellType[,] ReturnCroppedLayout(cellType[,] originalMatrix)
+    {
+        
+
+        RectInt rectangle = FindLayoutBoundingBox(originalMatrix);
+
+        cellType[,] croppedMatrix = new cellType[rectangle.width, rectangle.height];
+
+        for (int j = rectangle.y; j < rectangle.y+rectangle.height; j++)
+        {
+            int croppedIndex_y = j - rectangle.y;
+
+            for (int i = rectangle.x; i < rectangle.x+rectangle.width; i++)
+            {
+                int croppedIndex_x = i - rectangle.x;
+
+                croppedMatrix[croppedIndex_x, croppedIndex_y] = originalMatrix[i, j];
+
+            }
+        }
+
+
+        return croppedMatrix;
+
+
+    }
     
    private void WriteAllNodestoMatrix()
     {
@@ -1101,7 +1124,42 @@ public class DungeonGenerator : MonoBehaviour
 
     }
     
+    private RectInt FindLayoutBoundingBox(cellType[,] cellMatrix) 
+    {
+        int minX = cellMatrix.GetLength(0); // columns (set to max initially)
+        int maxX = 0;
+        int minY = cellMatrix.GetLength(1); // rows (set to max initially)
+        int maxY = 0;
 
+        bool foundAny = false;
+
+        // Scan through the entire grid
+        for (int j = 0; j < cellMatrix.GetLength(1); j++)
+        {
+            for (int i = 0; i < cellMatrix.GetLength(0); i++)
+            {
+                if (cellMatrix[i, j] != cellType.undef)
+                {
+                    foundAny = true;
+
+                    if (i < minX) minX = i;
+                    if (i > maxX) maxX = i;
+                    if (j < minY) minY = j;
+                    if (j > maxY) maxY = j;
+                }
+            }
+        }
+
+        if (!foundAny)
+        {
+            // Return an empty rect if no defined values found
+            return new RectInt(0, 0, 0, 0);
+        }
+
+        // RectInt parameters: x, y, width, height
+        return new RectInt(minX, minY, maxX - minX + 1, maxY - minY + 1);
+
+    }
    
 
 
