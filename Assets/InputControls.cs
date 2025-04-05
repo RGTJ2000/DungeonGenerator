@@ -62,6 +62,15 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ZoomScreen"",
+                    ""type"": ""Value"",
+                    ""id"": ""7c92e578-4aba-4f68-b885-cfab70a2b0ab"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -130,6 +139,17 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""action"": ""GenerateFullLayout"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4558b01c-59f1-4fb0-bf9e-af3d2ec6dc52"",
+                    ""path"": ""<Mouse>/scroll"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ZoomScreen"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -142,6 +162,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         m_General_Refresh = m_General.FindAction("Refresh", throwIfNotFound: true);
         m_General_CreateNextNode = m_General.FindAction("CreateNextNode", throwIfNotFound: true);
         m_General_GenerateFullLayout = m_General.FindAction("GenerateFullLayout", throwIfNotFound: true);
+        m_General_ZoomScreen = m_General.FindAction("ZoomScreen", throwIfNotFound: true);
     }
 
     ~@InputControls()
@@ -212,6 +233,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_General_Refresh;
     private readonly InputAction m_General_CreateNextNode;
     private readonly InputAction m_General_GenerateFullLayout;
+    private readonly InputAction m_General_ZoomScreen;
     public struct GeneralActions
     {
         private @InputControls m_Wrapper;
@@ -220,6 +242,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         public InputAction @Refresh => m_Wrapper.m_General_Refresh;
         public InputAction @CreateNextNode => m_Wrapper.m_General_CreateNextNode;
         public InputAction @GenerateFullLayout => m_Wrapper.m_General_GenerateFullLayout;
+        public InputAction @ZoomScreen => m_Wrapper.m_General_ZoomScreen;
         public InputActionMap Get() { return m_Wrapper.m_General; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -241,6 +264,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @GenerateFullLayout.started += instance.OnGenerateFullLayout;
             @GenerateFullLayout.performed += instance.OnGenerateFullLayout;
             @GenerateFullLayout.canceled += instance.OnGenerateFullLayout;
+            @ZoomScreen.started += instance.OnZoomScreen;
+            @ZoomScreen.performed += instance.OnZoomScreen;
+            @ZoomScreen.canceled += instance.OnZoomScreen;
         }
 
         private void UnregisterCallbacks(IGeneralActions instance)
@@ -257,6 +283,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @GenerateFullLayout.started -= instance.OnGenerateFullLayout;
             @GenerateFullLayout.performed -= instance.OnGenerateFullLayout;
             @GenerateFullLayout.canceled -= instance.OnGenerateFullLayout;
+            @ZoomScreen.started -= instance.OnZoomScreen;
+            @ZoomScreen.performed -= instance.OnZoomScreen;
+            @ZoomScreen.canceled -= instance.OnZoomScreen;
         }
 
         public void RemoveCallbacks(IGeneralActions instance)
@@ -280,5 +309,6 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         void OnRefresh(InputAction.CallbackContext context);
         void OnCreateNextNode(InputAction.CallbackContext context);
         void OnGenerateFullLayout(InputAction.CallbackContext context);
+        void OnZoomScreen(InputAction.CallbackContext context);
     }
 }

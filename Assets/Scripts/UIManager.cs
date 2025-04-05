@@ -2,9 +2,12 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using System.Xml.Serialization;
+using UnityEngine.InputSystem;
 
 public class UIManager : MonoBehaviour
 {
+    //private PlayerInputActions _inputActions;
+
     public GameObject textObject;
     public GameObject imageObject;
     public GameObject dungeongenerator_obj;
@@ -47,6 +50,11 @@ public class UIManager : MonoBehaviour
     private Color _refreshDefaultColor;
     private Color32 greyOutColor = new Color32(100, 100, 100, 255);
 
+    private void Awake()
+    {
+        //_inputActions = new PlayerInputActions();
+
+    }
     private void OnEnable()
     {
         mainPathCount_inputField.onEndEdit.AddListener(OnUpdateNodes);
