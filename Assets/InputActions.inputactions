@@ -1,5 +1,5 @@
 {
-    "name": "InputControls",
+    "name": "InputActions",
     "maps": [
         {
             "name": "General",
@@ -48,6 +48,15 @@
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "MoveCamera",
+                    "type": "Value",
+                    "id": "7a0a78fe-8251-4e3c-903a-ac34db9ca619",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "Hold",
                     "initialStateCheck": true
                 }
             ],
@@ -110,7 +119,7 @@
                 {
                     "name": "",
                     "id": "1c3145af-0fd7-4be4-8bda-0f78cc248e89",
-                    "path": "<Keyboard>/g",
+                    "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -126,6 +135,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "ZoomScreen",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "687d5baf-7618-44e0-a42c-59cfb1316eca",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MoveCamera",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

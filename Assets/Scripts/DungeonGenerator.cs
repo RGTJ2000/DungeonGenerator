@@ -89,7 +89,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private TextMeshPro _textMeshPro;
 
-    private InputControls _inputControls;
+    private InputActions _inputActions;
 
     private int endNode_index = 0; //the first empty slot in the array
     private int pointerToGen0Node = 0;
@@ -113,30 +113,30 @@ public class DungeonGenerator : MonoBehaviour
 
     private void Awake()
     {
-        _inputControls = new InputControls();
+        _inputActions = new InputActions();
 
 
     }
 
     private void OnEnable()
     {
-        _inputControls.General.Enable();
+        _inputActions.General.Enable();
 
-        _inputControls.General.Refresh.started += OnRefresh;
+        _inputActions.General.Refresh.started += OnRefresh;
 
-        _inputControls.General.CreateNextNode.started += OnCreateNextNode;
+        //_inputActions.General.CreateNextNode.started += OnCreateNextNode;
 
-        _inputControls.General.GenerateFullLayout.started += OnGenerateFullLayout;
+        _inputActions.General.GenerateFullLayout.started += OnGenerateFullLayout;
 
     }
 
     private void OnDisable()
     {
-        _inputControls.General.Disable();
+        _inputActions.General.Disable();
 
-        _inputControls.General.Refresh.started -= OnRefresh;
-        _inputControls.General.CreateNextNode.started -= OnCreateNextNode;
-        _inputControls.General.GenerateFullLayout.started -= OnGenerateFullLayout;
+        _inputActions.General.Refresh.started -= OnRefresh;
+        //_inputActions.General.CreateNextNode.started -= OnCreateNextNode;
+        _inputActions.General.GenerateFullLayout.started -= OnGenerateFullLayout;
 
     }
 
@@ -297,7 +297,6 @@ public class DungeonGenerator : MonoBehaviour
         gridMeshGenerator.ClearMesh();
         InitializeCTypeMatrix();
 
-        _cameraController.ResetCameraViewSize();
 
         endNode_index = 0;
         pointerToGen0Node = 0;

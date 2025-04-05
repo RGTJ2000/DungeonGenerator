@@ -6,7 +6,9 @@ using UnityEngine.InputSystem;
 
 public class UIManager : MonoBehaviour
 {
-    //private PlayerInputActions _inputActions;
+    private InputActions _inputActions;
+    private Camera _camera;
+    private CameraController _cameraController;
 
     public GameObject textObject;
     public GameObject imageObject;
@@ -46,17 +48,38 @@ public class UIManager : MonoBehaviour
     public Button generateButton;
     public Button refreshButton;
 
+    [SerializeField] private float mouseScrollFactor;
+
     private Color _generateDefaultColor;
     private Color _refreshDefaultColor;
     private Color32 greyOutColor = new Color32(100, 100, 100, 255);
 
+    private Vector3 cameraDefaultPosition;
+    private float cameraDefaultSize;
+
+    private Vector3 _dragOrigin; // Stores initial click position in world space
+    private bool _isDragging = false;
+    private Vector2 _dragOriginScreen; 
+
     private void Awake()
     {
-        //_inputActions = new PlayerInputActions();
+        _inputActions = new InputActions();
+
+#if UNITY_EDITOR
+        UnityEditor.EditorWindow.focusedWindow.SendEvent(new Event { type = EventType.Ignore });
+#endif
+
 
     }
     private void OnEnable()
     {
+        _inputActions.General.Enable();
+        _inputActions.General.ZoomScreen.performed += OnZoom;
+
+        _inputActions.General.MoveCamera.started += OnMoveCamera;
+        _inputActions.General.MoveCamera.performed += OnMoveCamera;
+        _inputActions.General.MoveCamera.canceled += OnMoveCamera;
+
         mainPathCount_inputField.onEndEdit.AddListener(OnUpdateNodes);
         nodeUpButton.onClick.AddListener(OnNodeUp);
         nodeDownButton.onClick.AddListener(OnNodeDown);
@@ -87,6 +110,12 @@ public class UIManager : MonoBehaviour
     }
     private void OnDisable()
     {
+        _inputActions.General.ZoomScreen.performed -= OnZoom;
+
+        _inputActions.General.MoveCamera.started -= OnMoveCamera;
+        _inputActions.General.MoveCamera.performed -= OnMoveCamera;
+        _inputActions.General.MoveCamera.canceled -= OnMoveCamera;
+
         mainPathCount_inputField.onEndEdit.RemoveListener(OnUpdateNodes);
         nodeUpButton.onClick.RemoveListener(OnNodeUp);
         nodeDownButton.onClick.RemoveListener(OnNodeDown);
@@ -118,6 +147,11 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        _camera = Camera.main;
+        cameraDefaultPosition = _camera.transform.position;
+        cameraDefaultSize = _camera.orthographicSize;
+        _cameraController = _camera.GetComponent<CameraController>();
+
         _dungeonGenerator = dungeongenerator_obj.GetComponent<DungeonGenerator>();
 
         if (textObject != null)
@@ -188,14 +222,81 @@ public class UIManager : MonoBehaviour
         if (_dungeonGenerator.gen2_complete && !_dungeonGenerator.currentlyGenerating)
         {
             refreshButton.image.color = _refreshDefaultColor;
-        } else
+        }
+        else
         {
             refreshButton.image.color = greyOutColor;
         }
 
+        if (_isDragging)
+        {
+            Vector2 mousePos = Mouse.current.position.ReadValue();
+
+            float sensitivity = 0.5f * (_camera.orthographicSize / cameraDefaultSize);
+
+            Vector2 delta = (mousePos - _dragOriginScreen) * sensitivity; // Sensitivity factor
+
+            // Convert screen delta to world movement
+            _camera.transform.position -= new Vector3(delta.x, 0, delta.y);
+            _dragOriginScreen = mousePos; // Update for next frame
+        }
 
     }
 
+
+    private void OnZoom(InputAction.CallbackContext context)
+    {
+        if (_dungeonGenerator.currentlyGenerating || !_dungeonGenerator.gen2_complete)
+            return;
+
+        // Read the scroll delta (y-axis for vertical scroll)
+        float scrollDeltaY = context.ReadValue<Vector2>().y;
+
+        _camera.orthographicSize = Mathf.Clamp(_camera.orthographicSize - (_camera.orthographicSize * scrollDeltaY * mouseScrollFactor), 0, 5000);
+    }
+
+    private void OnMoveCamera(InputAction.CallbackContext context)
+    {
+        if (_dungeonGenerator.currentlyGenerating || !_dungeonGenerator.gen2_complete)
+            return;
+
+        if (context.started)
+        {
+            _dragOriginScreen = Mouse.current.position.ReadValue();
+            _isDragging = true;
+        }
+        else if (context.canceled)
+        {
+            _isDragging = false;
+        }
+        /*
+        if (!context.performed) return;
+
+        if(!_dungeonGenerator.currentlyGenerating && _dungeonGenerator.gen2_complete)
+        {
+            // Get mouse position and raycast
+            Vector2 mousePos = Mouse.current.position.ReadValue();
+            Ray ray = _camera.ScreenPointToRay(mousePos);
+
+            // Raycast against ground plane (Y=0)
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
+            {
+                // Snap camera to X/Z of hit point while preserving Y rotation
+                _camera.transform.position = new Vector3(
+                    hit.point.x,
+                    _camera.transform.position.y, // Keep original Y (10)
+                    hit.point.z
+                );
+            }
+
+        }
+        else
+        {
+            return;
+        }
+       */
+
+    }
     private void OnDefaultValues()
     {
         _dungeonGenerator.SetDefaultValues();
@@ -219,6 +320,8 @@ public class UIManager : MonoBehaviour
     private void OnRefresh()
     {
         _dungeonGenerator.Refresh();
+        _cameraController.ResetCameraViewSize();
+        _camera.transform.position = cameraDefaultPosition;
     }
 
     private void OnNodeUp()
@@ -365,7 +468,7 @@ public class UIManager : MonoBehaviour
         if (float.TryParse(roomProb_input.text, out float newValue))
         {
             _dungeonGenerator.SetRoomProb(newValue);
-            roomProb_input.text = (_dungeonGenerator.room_prob*100).ToString();
+            roomProb_input.text = (_dungeonGenerator.room_prob * 100).ToString();
 
         }
         else
