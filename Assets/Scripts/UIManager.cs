@@ -14,6 +14,8 @@ public class UIManager : MonoBehaviour
     private float _generationStartTime;
     private bool _wasGeneratingLastFrame;
 
+    public Button defaultValues;
+
     public TMP_InputField mainPathCount_inputField;
     public Button nodeUpButton;
     public Button nodeDownButton;
@@ -33,6 +35,10 @@ public class UIManager : MonoBehaviour
     public TMP_InputField hallLengthMin_input;
     public Button hallLengthMinUp;
     public Button hallLengthMinDown;
+
+    public TMP_InputField roomProb_input;
+    public Button roomProbUp;
+    public Button roomProbDown;
 
     public Button generateButton;
     public Button refreshButton;
@@ -63,7 +69,11 @@ public class UIManager : MonoBehaviour
         hallLengthMinUp.onClick.AddListener(OnHallLengthMinUp);
         hallLengthMinDown.onClick.AddListener(OnHallLengthMinDown);
 
+        roomProb_input.onEndEdit.AddListener(OnUpdateRoomProb);
+        roomProbUp.onClick.AddListener(OnRoomProbUp);
+        roomProbDown.onClick.AddListener(OnRoomProbDown);
 
+        defaultValues.onClick.AddListener(OnDefaultValues);
         generateButton.onClick.AddListener(OnGenerate);
         refreshButton.onClick.AddListener(OnRefresh);
     }
@@ -89,6 +99,11 @@ public class UIManager : MonoBehaviour
         hallLengthMinUp.onClick.RemoveListener(OnHallLengthMinUp);
         hallLengthMinDown.onClick.RemoveListener(OnHallLengthMinDown);
 
+        roomProb_input.onEndEdit.RemoveListener(OnUpdateRoomProb);
+        roomProbUp.onClick.RemoveListener(OnRoomProbUp);
+        roomProbDown.onClick.RemoveListener(OnRoomProbDown);
+
+        defaultValues.onClick.RemoveListener(OnDefaultValues);
         generateButton.onClick.RemoveListener(OnGenerate);
         refreshButton.onClick.RemoveListener(OnRefresh);
     }
@@ -116,6 +131,8 @@ public class UIManager : MonoBehaviour
 
         hallLengthMax_input.text = _dungeonGenerator.hall_maxLength.ToString();
         hallLengthMin_input.text = _dungeonGenerator.hall_minLength.ToString();
+
+        roomProb_input.text = (_dungeonGenerator.room_prob * 100).ToString();
 
         _generateDefaultColor = generateButton.image.color;
         _refreshDefaultColor = refreshButton.image.color;
@@ -167,6 +184,21 @@ public class UIManager : MonoBehaviour
         {
             refreshButton.image.color = greyOutColor;
         }
+
+
+    }
+
+    private void OnDefaultValues()
+    {
+        _dungeonGenerator.SetDefaultValues();
+        mainPathCount_inputField.text = _dungeonGenerator.mainPath_nodeCount.ToString();
+        roomWidthMax_input.text = _dungeonGenerator.max_roomWidth.ToString();
+        roomHeightMax_input.text = _dungeonGenerator.max_roomHeight.ToString();
+
+        hallLengthMax_input.text = _dungeonGenerator.hall_maxLength.ToString();
+        hallLengthMin_input.text = _dungeonGenerator.hall_minLength.ToString();
+
+        roomProb_input.text = (_dungeonGenerator.room_prob * 100).ToString();
 
 
     }
@@ -320,4 +352,30 @@ public class UIManager : MonoBehaviour
         hallLengthMin_input.text = _dungeonGenerator.hall_minLength.ToString();
     }
 
+    private void OnUpdateRoomProb(string _)
+    {
+        if (float.TryParse(roomProb_input.text, out float newValue))
+        {
+            _dungeonGenerator.SetRoomProb(newValue);
+            roomProb_input.text = (_dungeonGenerator.room_prob*100).ToString();
+
+        }
+        else
+        {
+            roomProb_input.text = (_dungeonGenerator.room_prob * 100).ToString();
+        }
+    }
+
+    private void OnRoomProbUp()
+    {
+        _dungeonGenerator.RoomProbUp();
+        roomProb_input.text = (_dungeonGenerator.room_prob * 100).ToString();
+
+    }
+
+    private void OnRoomProbDown()
+    {
+        _dungeonGenerator.RoomProbDown();
+        roomProb_input.text = (_dungeonGenerator.room_prob * 100).ToString();
+    }
 }

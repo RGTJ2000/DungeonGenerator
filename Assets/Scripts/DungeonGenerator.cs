@@ -9,6 +9,9 @@ using UnityEngine.UIElements;
 
 public class DungeonGenerator : MonoBehaviour
 {
+    public Camera _mainCamera;
+    private CameraController _cameraController;
+
     public GridMeshGenerator gridMeshGenerator;
 
     [SerializeField] GameObject grid_prefab;
@@ -39,7 +42,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private hallProbability neutral_hProb;
     [SerializeField] private hallProbability sw_hprob;
-    [SerializeField] private float room_prob = 0.5f;  //higher probablity makes more rooms.
+    [SerializeField] public float room_prob = 0.5f;  //higher probablity makes more rooms.
 
     private int gridWidth;
     private int gridHeight;
@@ -95,6 +98,15 @@ public class DungeonGenerator : MonoBehaviour
     public bool gen2_complete = false;
 
     public bool currentlyGenerating = false;
+
+
+    private int mainPathNodes_default;
+    private int roomWidthMax_default;
+    private int roomHeightMax_default;
+    private int hallLengthMax_default;
+    private int hallLengthMin_default;
+    private float roomProb_default;
+
     /*
      * METHODS BELOW *********************************************************************************
      */
@@ -135,6 +147,8 @@ public class DungeonGenerator : MonoBehaviour
 
     void Start()
     {
+        _cameraController = _mainCamera.GetComponent<CameraController>();
+
         gridContainer = new GameObject("GridContainer");
 
         node_array = new NodeData[max_numberOfNodes];
@@ -155,6 +169,12 @@ public class DungeonGenerator : MonoBehaviour
         neutral_hProb = new hallProbability(1, 1, 1, 1);
         sw_hprob = new hallProbability(1, 3, 3, 1);
 
+        mainPathNodes_default = mainPath_nodeCount;
+        roomWidthMax_default = max_roomWidth;
+        roomHeightMax_default = max_roomHeight;
+        hallLengthMax_default = hall_maxLength;
+        hallLengthMin_default = hall_minLength;
+        roomProb_default = room_prob;
     }
 
 
@@ -264,6 +284,7 @@ public class DungeonGenerator : MonoBehaviour
 
 
 
+
     }
     void OnRefresh(InputAction.CallbackContext context)
     {
@@ -275,6 +296,8 @@ public class DungeonGenerator : MonoBehaviour
         Debug.Log("Destroying Grid Objects.");
         gridMeshGenerator.ClearMesh();
         InitializeCTypeMatrix();
+
+        _cameraController.ResetCameraViewSize();
 
         endNode_index = 0;
         pointerToGen0Node = 0;
@@ -305,7 +328,7 @@ public class DungeonGenerator : MonoBehaviour
 
     public void SetMainPathNodesCount(int count)
     {
-        mainPath_nodeCount = Mathf.Clamp(count, 0, 100);
+        mainPath_nodeCount = Mathf.Clamp(count, 0, 50);
     }
 
     public void SetRoomWidthMax(int width)
@@ -401,6 +424,35 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
+    public void SetDefaultValues()
+    {
+        mainPath_nodeCount = mainPathNodes_default;
+        max_roomWidth = roomWidthMax_default;
+        max_roomHeight = roomHeightMax_default;
+        hall_maxLength = hallLengthMax_default;
+        hall_minLength = hallLengthMin_default;
+        room_prob = roomProb_default;
+
+    }
+
+
+
+    public void SetRoomProb(float probPercent)
+    {
+        room_prob = Mathf.Clamp(probPercent/100,0, 1);
+    }
+
+    public void RoomProbUp()
+    {
+        room_prob = Mathf.Clamp( ( Mathf.Ceil( (room_prob+0.001f)*10  ) / 10), 0f, 1f);
+    }
+
+
+    public void RoomProbDown()
+    {
+        room_prob = Mathf.Clamp((Mathf.Floor((room_prob - 0.001f) * 10) / 10), 0f, 1f);
+
+    }
     private void ExpandNodeAtRandomAndOffset(int nodeIndex)
     {
         if (Random.value < room_prob)
@@ -1050,10 +1102,15 @@ public class DungeonGenerator : MonoBehaviour
     private void CheckCellTypeAndWrite(int i, int j, cellType thisCellType)
     {
         //this updates the c_type_matrix. Only writes if the cell is undef or if it's a wall
-        if (c_type_matrix[i, j] == cellType.wall || c_type_matrix[i, j] == cellType.undef)
+        if (  (i < c_type_matrix.GetLength(0)) && (j < c_type_matrix.GetLength(1)) && i >= 0 && j >=0)
         {
-            c_type_matrix[i, j] = thisCellType;
+            if (c_type_matrix[i, j] == cellType.wall || c_type_matrix[i, j] == cellType.undef)
+            {
+                c_type_matrix[i, j] = thisCellType;
+            }
+
         }
+        
 
     }
 
@@ -1209,6 +1266,10 @@ public class DungeonGenerator : MonoBehaviour
         cellType[,] croppedMatrix = ReturnCroppedLayout(c_type_matrix);
         Vector2 croppedOffset = new Vector2(croppedMatrix.GetLength(0) / 2, croppedMatrix.GetLength(1) / 2);
         gridMeshGenerator.GenerateMesh(croppedMatrix, -croppedOffset);
+
+        //Set Camera View
+        float viewSize = croppedMatrix.GetLength(1) / 2;
+        _cameraController.SetCameraViewSize(viewSize *1.3f);
 
         //reset Generating flag to false
         currentlyGenerating = false;
