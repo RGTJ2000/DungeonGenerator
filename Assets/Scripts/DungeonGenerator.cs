@@ -24,17 +24,18 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] int max_numberOfNodes = 50;
     //[SerializeField] int current_node;
     [SerializeField] int current_gen;
-    [SerializeField] int mainPath_nodeCount = 10;
+    public int mainPath_nodeCount = 10;
 
     [SerializeField] WallsOffset default_wallsOffset = new WallsOffset(1, 1, 1, 1);
     [SerializeField] HallStats default_hallStats = new HallStats(4, 3, 0, false);
     [SerializeField] HallStats zeroed_hallStats = new HallStats(0, 0, 0, false);
 
-    [SerializeField] private int hall_maxLength;
+    [SerializeField] public int hall_maxLength;
+    [SerializeField] public int hall_minLength;
     [SerializeField] private int hall_minWidth;
     [SerializeField] private int hall_maxWidth;
-    [SerializeField] private int max_roomHeight;
-    [SerializeField] private int max_roomWidth;
+    [SerializeField] public int max_roomHeight;
+    [SerializeField] public int max_roomWidth;
 
     private hallProbability neutral_hProb;
     [SerializeField] private hallProbability sw_hprob;
@@ -52,7 +53,7 @@ public class DungeonGenerator : MonoBehaviour
     GameObject gridContainer;
 
 
-  
+
 
     private struct cellData
     {
@@ -91,7 +92,7 @@ public class DungeonGenerator : MonoBehaviour
     private int pointerToGen0Node = 0;
 
     private bool gen1_complete = false;
-    private bool gen2_complete = false;
+    public bool gen2_complete = false;
 
     public bool currentlyGenerating = false;
     /*
@@ -159,14 +160,14 @@ public class DungeonGenerator : MonoBehaviour
 
     private void InitializeCTypeMatrix()
     {
-        for (int j=0; j < gridHeight; j++)
+        for (int j = 0; j < gridHeight; j++)
         {
-            for(int i=0; i<gridWidth; i++)
+            for (int i = 0; i < gridWidth; i++)
             {
                 c_type_matrix[i, j] = cellType.undef;
             }
         }
-        Debug.Log("c_type_matrix initialized. c_type_matrix[0,0]=" + c_type_matrix[0,0].ToString());
+        Debug.Log("c_type_matrix initialized. c_type_matrix[0,0]=" + c_type_matrix[0, 0].ToString());
     }
 
     private void OnCreateNextNode(InputAction.CallbackContext context)
@@ -236,6 +237,13 @@ public class DungeonGenerator : MonoBehaviour
 
     private void OnGenerateFullLayout(InputAction.CallbackContext context)
     {
+        GenerateFullLayout();
+
+
+    }
+
+    public void GenerateFullLayout()
+    {
         if (!currentlyGenerating && !gen2_complete)
         {
             StartCoroutine(GenerateLayout());
@@ -259,18 +267,139 @@ public class DungeonGenerator : MonoBehaviour
     }
     void OnRefresh(InputAction.CallbackContext context)
     {
+        Refresh();
+    }
+
+    public void Refresh()
+    {
         Debug.Log("Destroying Grid Objects.");
         gridMeshGenerator.ClearMesh();
         InitializeCTypeMatrix();
-        
+
         endNode_index = 0;
         pointerToGen0Node = 0;
         current_gen = 0;
         gen1_complete = false;
         gen2_complete = false;
+
+
+    }
+
+    public void MainPathNodesUp()
+    {
+        mainPath_nodeCount++;
+        if (mainPath_nodeCount > 100)
+        {
+            mainPath_nodeCount = 100;
+        }
+    }
+
+    public void MainPathNodesDown()
+    {
+        mainPath_nodeCount--;
+        if (mainPath_nodeCount < 1)
+        {
+            mainPath_nodeCount = 1;
+        }
+    }
+
+    public void SetMainPathNodesCount(int count)
+    {
+        mainPath_nodeCount = Mathf.Clamp(count, 0, 100);
+    }
+
+    public void SetRoomWidthMax(int width)
+    {
+        max_roomWidth = Mathf.Clamp(width, hall_minWidth, 100);
+    }
+
+    public void RoomWidthUp()
+    {
+        max_roomWidth++;
+        if (max_roomWidth > 100)
+        {
+            max_roomWidth = 100;
+        }
+    }
+
+    public void RoomWidthDown()
+    {
+        max_roomWidth--;
+        if (max_roomWidth < hall_minWidth)
+        {
+            max_roomWidth = hall_minWidth;
+        }
     }
 
 
+    public void SetRoomHeightMax(int height)
+    {
+        max_roomHeight = Mathf.Clamp(height, hall_minWidth, 100);
+    }
+
+    public void RoomHeightUp()
+    {
+        max_roomHeight++;
+        if (max_roomHeight > 100)
+        {
+            max_roomHeight = 100;
+        }
+    }
+
+    public void RoomHeightDown()
+    {
+        max_roomHeight--;
+        if (max_roomHeight < hall_minWidth)
+        {
+            max_roomHeight = hall_minWidth;
+        }
+    }
+
+    public void SetHallLengthMax(int length)
+    {
+        hall_maxLength = Mathf.Clamp(length, hall_minLength, 200);
+    }
+
+    public void HallLengthMaxUp()
+    {
+        hall_maxLength++;
+        if (hall_maxLength > 200)
+        {
+            hall_maxLength = 200;
+        }
+
+    }
+
+    public void HallLengthMaxDown()
+    {
+        hall_maxLength--;
+        if (hall_maxLength < hall_minLength)
+        {
+            hall_maxLength = hall_minLength;
+        }
+    }
+
+    public void SetHallLengthMin(int length)
+    {
+        hall_minLength = Mathf.Clamp(length, 1, 200);
+    }
+
+    public void HallLengthMinUp()
+    {
+        hall_minLength++;
+        if (hall_minLength > hall_maxLength)
+        {
+            hall_minLength=hall_maxLength;
+        }
+    }
+    public void HallLengthMinDown()
+    {
+        hall_minLength--;
+        if (hall_minLength < 1)
+        {
+            hall_minLength = 1;
+        }
+    }
 
     private void ExpandNodeAtRandomAndOffset(int nodeIndex)
     {
@@ -440,7 +569,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private void AddHallToNode(int nodeIndex, string direction)
     {
-        int length = Random.Range(1, hall_maxLength + 1);
+        int length = Random.Range(hall_minLength, hall_maxLength + 1);
 
         int maxWidth;
         switch (direction)
@@ -803,7 +932,7 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     thisCellType = cellType.node;
                 }
-                CheckCellTypeAndWrite(i,j, thisCellType);
+                CheckCellTypeAndWrite(i, j, thisCellType);
 
 
             }
@@ -949,7 +1078,7 @@ public class DungeonGenerator : MonoBehaviour
         return parentPos;
     }
 
- 
+
 
 
     private int CreateNode(int parent_index, Vector2 offset, int hallIndex, int gen)
@@ -1078,7 +1207,7 @@ public class DungeonGenerator : MonoBehaviour
 
         //Crop layout and render mesh
         cellType[,] croppedMatrix = ReturnCroppedLayout(c_type_matrix);
-        Vector2 croppedOffset = new Vector2(croppedMatrix.GetLength(0)/2, croppedMatrix.GetLength(1)/2);
+        Vector2 croppedOffset = new Vector2(croppedMatrix.GetLength(0) / 2, croppedMatrix.GetLength(1) / 2);
         gridMeshGenerator.GenerateMesh(croppedMatrix, -croppedOffset);
 
         //reset Generating flag to false
@@ -1090,17 +1219,17 @@ public class DungeonGenerator : MonoBehaviour
 
     private cellType[,] ReturnCroppedLayout(cellType[,] originalMatrix)
     {
-        
+
 
         RectInt rectangle = FindLayoutBoundingBox(originalMatrix);
 
         cellType[,] croppedMatrix = new cellType[rectangle.width, rectangle.height];
 
-        for (int j = rectangle.y; j < rectangle.y+rectangle.height; j++)
+        for (int j = rectangle.y; j < rectangle.y + rectangle.height; j++)
         {
             int croppedIndex_y = j - rectangle.y;
 
-            for (int i = rectangle.x; i < rectangle.x+rectangle.width; i++)
+            for (int i = rectangle.x; i < rectangle.x + rectangle.width; i++)
             {
                 int croppedIndex_x = i - rectangle.x;
 
@@ -1114,17 +1243,17 @@ public class DungeonGenerator : MonoBehaviour
 
 
     }
-    
-   private void WriteAllNodestoMatrix()
+
+    private void WriteAllNodestoMatrix()
     {
-        for (int i = 0;i< endNode_index;i++) 
+        for (int i = 0; i < endNode_index; i++)
         {
             WriteNodeToMatrix(i);
         }
 
     }
-    
-    private RectInt FindLayoutBoundingBox(cellType[,] cellMatrix) 
+
+    private RectInt FindLayoutBoundingBox(cellType[,] cellMatrix)
     {
         int minX = cellMatrix.GetLength(0); // columns (set to max initially)
         int maxX = 0;
@@ -1160,7 +1289,7 @@ public class DungeonGenerator : MonoBehaviour
         return new RectInt(minX, minY, maxX - minX + 1, maxY - minY + 1);
 
     }
-   
+
 
 
 }
