@@ -7,8 +7,10 @@ using UnityEngine.InputSystem;
 public class UIManager : MonoBehaviour
 {
     private InputActions _inputActions;
-    private Camera _camera;
+    private Camera _cameraMain;
     private CameraController _cameraController;
+
+    private Camera _playerCamera;
 
     public GameObject textObject;
     public GameObject imageObject;
@@ -54,6 +56,8 @@ public class UIManager : MonoBehaviour
     public Button refreshButton;
 
     public Button instantiateButton;
+
+    [SerializeField] private GameObject tabPanel;
 
     [SerializeField] private float mouseScrollFactor;
 
@@ -118,6 +122,8 @@ public class UIManager : MonoBehaviour
         refreshButton.onClick.AddListener(OnRefresh);
 
         instantiateButton.onClick.AddListener(OnInstantiate);
+
+        _inputActions.General.ReturnToOverhead.started += ToggleOverheadView;
     }
     private void OnDisable()
     {
@@ -158,14 +164,17 @@ public class UIManager : MonoBehaviour
         refreshButton.onClick.RemoveListener(OnRefresh);
 
         instantiateButton.onClick.RemoveListener(OnInstantiate);
+
+        _inputActions.General.ReturnToOverhead.started -= ToggleOverheadView;
+
     }
 
     void Start()
     {
-        _camera = Camera.main;
-        cameraDefaultPosition = _camera.transform.position;
-        cameraDefaultSize = _camera.orthographicSize;
-        _cameraController = _camera.GetComponent<CameraController>();
+        _cameraMain = Camera.main;
+        cameraDefaultPosition = _cameraMain.transform.position;
+        cameraDefaultSize = _cameraMain.orthographicSize;
+        _cameraController = _cameraMain.GetComponent<CameraController>();
 
         _dungeonGenerator = dungeongenerator_obj.GetComponent<DungeonGenerator>();
         _instantiator = instantiator_obj.GetComponent<Instantiator>();
@@ -195,6 +204,8 @@ public class UIManager : MonoBehaviour
         _generateDefaultColor = generateButton.image.color;
         _refreshDefaultColor = refreshButton.image.color;
         _instantiateDefaultColor = instantiateButton.image.color;
+
+        tabPanel.SetActive(false);
 
     }
 
@@ -258,31 +269,77 @@ public class UIManager : MonoBehaviour
             instantiateButton.image.color = greyOutColor;
         }
 
-        if (_isDragging)
+        if (_isDragging && _cameraMain.enabled)
         {
             Vector2 mousePos = Mouse.current.position.ReadValue();
 
-            float sensitivity = 0.5f * (_camera.orthographicSize / cameraDefaultSize);
+            float sensitivity = 0.5f * (_cameraMain.orthographicSize / cameraDefaultSize);
 
             Vector2 delta = (mousePos - _dragOriginScreen) * sensitivity; // Sensitivity factor
 
             // Convert screen delta to world movement
-            _camera.transform.position -= new Vector3(delta.x, 0, delta.y);
+            _cameraMain.transform.position -= new Vector3(delta.x, 0, delta.y);
             _dragOriginScreen = mousePos; // Update for next frame
+        }
+
+        if (_instantiator.isInstantiated)
+        {
+            tabPanel.SetActive(true);
+        }
+        else
+        {
+            tabPanel.SetActive(false);
         }
 
     }
 
 
+    private void ToggleOverheadView(InputAction.CallbackContext context)
+    {
+        if (_instantiator.isInstantiated && _playerCamera != null && _playerCamera.enabled == true)
+        {
+            _cameraMain.enabled = true;
+            _cameraMain.GetComponent<AudioListener>().enabled = true;
+
+
+            _playerCamera.enabled = false;
+            _playerCamera.GetComponent<AudioListener>().enabled = false;
+
+
+            //_cameraController.ResetCameraViewSize();
+
+            //_cameraMain.transform.position = cameraDefaultPosition;
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else if (_instantiator.isInstantiated && _cameraMain.enabled == true)
+        {
+            _playerCamera.enabled = true;
+            _playerCamera.GetComponent<AudioListener>().enabled = true;
+
+            _cameraMain.enabled = false;
+            _cameraMain.GetComponent<AudioListener>().enabled = false;
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+    }
     private void OnZoom(InputAction.CallbackContext context)
     {
         if (_dungeonGenerator.currentlyGenerating || !_dungeonGenerator.gen2_complete)
             return;
 
-        // Read the scroll delta (y-axis for vertical scroll)
-        float scrollDeltaY = context.ReadValue<Vector2>().y;
+        if (_cameraMain.enabled)
+        {
+            // Read the scroll delta (y-axis for vertical scroll)
+            float scrollDeltaY = context.ReadValue<Vector2>().y;
 
-        _camera.orthographicSize = Mathf.Clamp(_camera.orthographicSize - (_camera.orthographicSize * scrollDeltaY * mouseScrollFactor), 0, 5000);
+            _cameraMain.orthographicSize = Mathf.Clamp(_cameraMain.orthographicSize - (_cameraMain.orthographicSize * scrollDeltaY * mouseScrollFactor), 0, 5000);
+
+        }
+
     }
 
     private void OnMoveCamera(InputAction.CallbackContext context)
@@ -325,9 +382,25 @@ public class UIManager : MonoBehaviour
     private void OnRefresh()
     {
         _dungeonGenerator.Refresh();
-        _instantiator.DestroyFloorAndWalls();
+
+        _cameraMain.enabled = true;
+        _cameraMain.GetComponent<AudioListener>().enabled = true;
+
+        if (_playerCamera != null)
+        {
+            _playerCamera.enabled = false;
+            _playerCamera.GetComponent<AudioListener>().enabled = false;
+        }
+
         _cameraController.ResetCameraViewSize();
-        _camera.transform.position = cameraDefaultPosition;
+
+        _cameraMain.transform.position = cameraDefaultPosition;
+
+
+
+        _instantiator.DestroyFloorAndWallsAndPlayer();
+
+
     }
 
     private void OnInstantiate()
@@ -335,6 +408,17 @@ public class UIManager : MonoBehaviour
         if (_dungeonGenerator.gen2_complete && !_dungeonGenerator.currentlyGenerating && !_instantiator.isInstantiated)
         {
             _instantiator.InstantiateDungeon(_dungeonGenerator.croppedMatrix);
+            GameObject player = _instantiator.PlacePlayer(_dungeonGenerator.croppedMatrix);
+
+            _playerCamera = player.GetComponentInChildren<Camera>();
+            _playerCamera.enabled = true;
+            _playerCamera.GetComponent<AudioListener>().enabled = true;
+
+            _cameraMain.enabled = false;
+            _cameraMain.GetComponent<AudioListener>().enabled = false;
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
     }
 

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Instantiator : MonoBehaviour
 {
-
+    [SerializeField] private GameObject player_prefab;
     [SerializeField]private GameObject wallUnit_prefab;
     [SerializeField]private GameObject nodeFloor;
     [SerializeField] private GameObject hallFloor;
@@ -14,6 +14,8 @@ public class Instantiator : MonoBehaviour
 
     private GameObject PrefabContainer;
     private GameObject floor;
+
+    private GameObject player;
 
     public bool isInstantiated = false;
 
@@ -77,7 +79,7 @@ public class Instantiator : MonoBehaviour
         isInstantiated = true;
     }
 
-    public void DestroyFloorAndWalls()
+    public void DestroyFloorAndWallsAndPlayer()
     {
         foreach (Transform child in PrefabContainer.transform)
         {
@@ -86,6 +88,58 @@ public class Instantiator : MonoBehaviour
 
         Destroy(floor);
 
+        if (player != null)
+        {
+            Destroy(player);
+        }
+
         isInstantiated = false;
+    }
+
+    public GameObject PlacePlayer(cellType[,] cell_matrix)
+    {
+        Vector3 worldStartPosition = GetStartNodePosition(cell_matrix);
+
+        player = Instantiate(player_prefab, worldStartPosition, Quaternion.identity);
+
+        return player;
+    }
+
+    private Vector3 GetStartNodePosition(cellType[,] cell_matrix)
+    {
+        Vector3 worldStart = Vector3.zero;
+
+        int minX = cell_matrix.GetLength(0)-1;
+        int maxX = 0;
+        int minY = cell_matrix.GetLength(1)-1;
+        int maxY = 0;
+
+        for (int j=0; j<cell_matrix.GetLength(1); j++)
+        {
+            for (int i=0; i<cell_matrix.GetLength(0); i++)
+            {
+                if (cell_matrix[i,j] == cellType.start)
+                {
+                    if (i < minX) minX = i;
+                    if (i > maxX) maxX = i;
+                    
+                    if (j < minY) minY = j;
+                    if(j > maxY) maxY = j;
+
+
+                }
+
+            }
+        }
+
+        int centerX = (minX + maxX) / 2;
+        int centerY = (minY + maxY) / 2;
+
+        worldStart = new Vector3(center_position.x - cell_matrix.GetLength(0)/2 + centerX, floorElevation+1, center_position.z - cell_matrix.GetLength(1)/2 + centerY);
+
+        Debug.Log($"minX/maxX= {minX}/{maxX} | minY/maxY= {minY}/{maxY} | center pos ({centerX},{centerY})");
+        return worldStart;
+
+
     }
 }

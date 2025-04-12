@@ -98,6 +98,24 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Jump"",
+                    ""type"": ""Button"",
+                    ""id"": ""f57c6f4f-1e0b-47d7-aae5-0fd83a2d86a2"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ReturnToOverhead"",
+                    ""type"": ""Button"",
+                    ""id"": ""da5ec2e2-91db-423b-b190-034ea84d4ea8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -133,17 +151,6 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""action"": ""NodeSize"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""3fdeb085-1a24-4bfc-ac09-ed0989bf7391"",
-                    ""path"": ""<Keyboard>/space"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Refresh"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
@@ -254,6 +261,28 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""action"": ""MouseLook"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3e8a7659-8c2f-4a2d-a527-2655d2f19638"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3680c233-afaf-4c58-b9db-0f00b75e9e0f"",
+                    ""path"": ""<Keyboard>/tab"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ReturnToOverhead"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -270,6 +299,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         m_General_MoveCamera = m_General.FindAction("MoveCamera", throwIfNotFound: true);
         m_General_MovePlayer = m_General.FindAction("MovePlayer", throwIfNotFound: true);
         m_General_MouseLook = m_General.FindAction("MouseLook", throwIfNotFound: true);
+        m_General_Jump = m_General.FindAction("Jump", throwIfNotFound: true);
+        m_General_ReturnToOverhead = m_General.FindAction("ReturnToOverhead", throwIfNotFound: true);
     }
 
     ~@InputActions()
@@ -344,6 +375,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_General_MoveCamera;
     private readonly InputAction m_General_MovePlayer;
     private readonly InputAction m_General_MouseLook;
+    private readonly InputAction m_General_Jump;
+    private readonly InputAction m_General_ReturnToOverhead;
     public struct GeneralActions
     {
         private @InputActions m_Wrapper;
@@ -356,6 +389,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         public InputAction @MoveCamera => m_Wrapper.m_General_MoveCamera;
         public InputAction @MovePlayer => m_Wrapper.m_General_MovePlayer;
         public InputAction @MouseLook => m_Wrapper.m_General_MouseLook;
+        public InputAction @Jump => m_Wrapper.m_General_Jump;
+        public InputAction @ReturnToOverhead => m_Wrapper.m_General_ReturnToOverhead;
         public InputActionMap Get() { return m_Wrapper.m_General; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -389,6 +424,12 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @MouseLook.started += instance.OnMouseLook;
             @MouseLook.performed += instance.OnMouseLook;
             @MouseLook.canceled += instance.OnMouseLook;
+            @Jump.started += instance.OnJump;
+            @Jump.performed += instance.OnJump;
+            @Jump.canceled += instance.OnJump;
+            @ReturnToOverhead.started += instance.OnReturnToOverhead;
+            @ReturnToOverhead.performed += instance.OnReturnToOverhead;
+            @ReturnToOverhead.canceled += instance.OnReturnToOverhead;
         }
 
         private void UnregisterCallbacks(IGeneralActions instance)
@@ -417,6 +458,12 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @MouseLook.started -= instance.OnMouseLook;
             @MouseLook.performed -= instance.OnMouseLook;
             @MouseLook.canceled -= instance.OnMouseLook;
+            @Jump.started -= instance.OnJump;
+            @Jump.performed -= instance.OnJump;
+            @Jump.canceled -= instance.OnJump;
+            @ReturnToOverhead.started -= instance.OnReturnToOverhead;
+            @ReturnToOverhead.performed -= instance.OnReturnToOverhead;
+            @ReturnToOverhead.canceled -= instance.OnReturnToOverhead;
         }
 
         public void RemoveCallbacks(IGeneralActions instance)
@@ -444,5 +491,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         void OnMoveCamera(InputAction.CallbackContext context);
         void OnMovePlayer(InputAction.CallbackContext context);
         void OnMouseLook(InputAction.CallbackContext context);
+        void OnJump(InputAction.CallbackContext context);
+        void OnReturnToOverhead(InputAction.CallbackContext context);
     }
 }
