@@ -52,9 +52,10 @@ public class DungeonGenerator : MonoBehaviour
     private cellData[,] cellMatrix;
 
     private cellType[,] c_type_matrix;
-
+    public cellType[,] croppedMatrix;
     GameObject gridContainer;
 
+    [SerializeField] private Instantiator _instantiator;
 
 
 
@@ -1252,7 +1253,6 @@ public class DungeonGenerator : MonoBehaviour
         gen2_complete = true;
 
 
-        Debug.Log("Beginning Instantiation.");
 
         yield return null;
 
@@ -1262,7 +1262,7 @@ public class DungeonGenerator : MonoBehaviour
 
 
         //Crop layout and render mesh
-        cellType[,] croppedMatrix = ReturnCroppedLayout(c_type_matrix);
+        croppedMatrix = ReturnCroppedLayout(c_type_matrix);
         Vector2 croppedOffset = new Vector2(croppedMatrix.GetLength(0) / 2, croppedMatrix.GetLength(1) / 2);
         gridMeshGenerator.GenerateMesh(croppedMatrix, -croppedOffset);
 
@@ -1272,6 +1272,9 @@ public class DungeonGenerator : MonoBehaviour
 
         //reset Generating flag to false
         currentlyGenerating = false;
+
+        //instantiate
+        //_instantiator.InstantiateDungeon(croppedMatrix);
 
 
     }

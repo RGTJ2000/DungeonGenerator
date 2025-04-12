@@ -13,8 +13,13 @@ public class UIManager : MonoBehaviour
     public GameObject textObject;
     public GameObject imageObject;
     public GameObject dungeongenerator_obj;
+    public GameObject instantiator_obj;
 
     private DungeonGenerator _dungeonGenerator;
+    private Instantiator _instantiator;
+
+
+
     private TextMeshProUGUI _generationText;
     private float _generationStartTime;
     private bool _wasGeneratingLastFrame;
@@ -48,10 +53,14 @@ public class UIManager : MonoBehaviour
     public Button generateButton;
     public Button refreshButton;
 
+    public Button instantiateButton;
+
     [SerializeField] private float mouseScrollFactor;
 
     private Color _generateDefaultColor;
     private Color _refreshDefaultColor;
+    private Color _instantiateDefaultColor;
+
     private Color32 greyOutColor = new Color32(100, 100, 100, 255);
 
     private Vector3 cameraDefaultPosition;
@@ -59,7 +68,7 @@ public class UIManager : MonoBehaviour
 
     private Vector3 _dragOrigin; // Stores initial click position in world space
     private bool _isDragging = false;
-    private Vector2 _dragOriginScreen; 
+    private Vector2 _dragOriginScreen;
 
     private void Awake()
     {
@@ -107,9 +116,13 @@ public class UIManager : MonoBehaviour
         defaultValues.onClick.AddListener(OnDefaultValues);
         generateButton.onClick.AddListener(OnGenerate);
         refreshButton.onClick.AddListener(OnRefresh);
+
+        instantiateButton.onClick.AddListener(OnInstantiate);
     }
     private void OnDisable()
     {
+        _inputActions.General.Disable();
+
         _inputActions.General.ZoomScreen.performed -= OnZoom;
 
         _inputActions.General.MoveCamera.started -= OnMoveCamera;
@@ -143,6 +156,8 @@ public class UIManager : MonoBehaviour
         defaultValues.onClick.RemoveListener(OnDefaultValues);
         generateButton.onClick.RemoveListener(OnGenerate);
         refreshButton.onClick.RemoveListener(OnRefresh);
+
+        instantiateButton.onClick.RemoveListener(OnInstantiate);
     }
 
     void Start()
@@ -153,6 +168,7 @@ public class UIManager : MonoBehaviour
         _cameraController = _camera.GetComponent<CameraController>();
 
         _dungeonGenerator = dungeongenerator_obj.GetComponent<DungeonGenerator>();
+        _instantiator = instantiator_obj.GetComponent<Instantiator>();
 
         if (textObject != null)
         {
@@ -178,6 +194,7 @@ public class UIManager : MonoBehaviour
 
         _generateDefaultColor = generateButton.image.color;
         _refreshDefaultColor = refreshButton.image.color;
+        _instantiateDefaultColor = instantiateButton.image.color;
 
     }
 
@@ -221,11 +238,24 @@ public class UIManager : MonoBehaviour
 
         if (_dungeonGenerator.gen2_complete && !_dungeonGenerator.currentlyGenerating)
         {
+            if (!_instantiator.isInstantiated)
+            {
+                instantiateButton.image.color = _instantiateDefaultColor;
+
+            }
+            else
+            {
+                instantiateButton.image.color = greyOutColor;
+
+            }
+
             refreshButton.image.color = _refreshDefaultColor;
+
         }
         else
         {
             refreshButton.image.color = greyOutColor;
+            instantiateButton.image.color = greyOutColor;
         }
 
         if (_isDragging)
@@ -269,32 +299,7 @@ public class UIManager : MonoBehaviour
         {
             _isDragging = false;
         }
-        /*
-        if (!context.performed) return;
 
-        if(!_dungeonGenerator.currentlyGenerating && _dungeonGenerator.gen2_complete)
-        {
-            // Get mouse position and raycast
-            Vector2 mousePos = Mouse.current.position.ReadValue();
-            Ray ray = _camera.ScreenPointToRay(mousePos);
-
-            // Raycast against ground plane (Y=0)
-            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
-            {
-                // Snap camera to X/Z of hit point while preserving Y rotation
-                _camera.transform.position = new Vector3(
-                    hit.point.x,
-                    _camera.transform.position.y, // Keep original Y (10)
-                    hit.point.z
-                );
-            }
-
-        }
-        else
-        {
-            return;
-        }
-       */
 
     }
     private void OnDefaultValues()
@@ -320,8 +325,17 @@ public class UIManager : MonoBehaviour
     private void OnRefresh()
     {
         _dungeonGenerator.Refresh();
+        _instantiator.DestroyFloorAndWalls();
         _cameraController.ResetCameraViewSize();
         _camera.transform.position = cameraDefaultPosition;
+    }
+
+    private void OnInstantiate()
+    {
+        if (_dungeonGenerator.gen2_complete && !_dungeonGenerator.currentlyGenerating && !_instantiator.isInstantiated)
+        {
+            _instantiator.InstantiateDungeon(_dungeonGenerator.croppedMatrix);
+        }
     }
 
     private void OnNodeUp()

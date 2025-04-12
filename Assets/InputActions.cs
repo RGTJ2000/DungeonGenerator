@@ -80,6 +80,24 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": ""Hold"",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""MovePlayer"",
+                    ""type"": ""Value"",
+                    ""id"": ""d45f8bb7-44cf-422b-b1b8-99f9b982153b"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""MouseLook"",
+                    ""type"": ""Value"",
+                    ""id"": ""3519e791-4491-421b-9c5c-dcb1b7c9858d"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -170,6 +188,72 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""action"": ""MoveCamera"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""2D Vector"",
+                    ""id"": ""1e4f3b29-abf3-404b-9ae7-6b3d5dfcd039"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MovePlayer"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""cf658f81-4fc3-4f77-9ffc-a52504308f2c"",
+                    ""path"": ""<Keyboard>/w"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MovePlayer"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""67c1cd53-d934-4fb9-a84c-47a5f000b286"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MovePlayer"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""ecbdea24-8f30-4a64-a05c-cca1abd9a59d"",
+                    ""path"": ""<Keyboard>/a"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MovePlayer"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""f0eb07c9-2359-4848-b08a-be371027bf20"",
+                    ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MovePlayer"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""63570e48-5832-4584-a524-c1ab63bc7eac"",
+                    ""path"": ""<Mouse>/delta"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MouseLook"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -184,6 +268,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         m_General_GenerateFullLayout = m_General.FindAction("GenerateFullLayout", throwIfNotFound: true);
         m_General_ZoomScreen = m_General.FindAction("ZoomScreen", throwIfNotFound: true);
         m_General_MoveCamera = m_General.FindAction("MoveCamera", throwIfNotFound: true);
+        m_General_MovePlayer = m_General.FindAction("MovePlayer", throwIfNotFound: true);
+        m_General_MouseLook = m_General.FindAction("MouseLook", throwIfNotFound: true);
     }
 
     ~@InputActions()
@@ -256,6 +342,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_General_GenerateFullLayout;
     private readonly InputAction m_General_ZoomScreen;
     private readonly InputAction m_General_MoveCamera;
+    private readonly InputAction m_General_MovePlayer;
+    private readonly InputAction m_General_MouseLook;
     public struct GeneralActions
     {
         private @InputActions m_Wrapper;
@@ -266,6 +354,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         public InputAction @GenerateFullLayout => m_Wrapper.m_General_GenerateFullLayout;
         public InputAction @ZoomScreen => m_Wrapper.m_General_ZoomScreen;
         public InputAction @MoveCamera => m_Wrapper.m_General_MoveCamera;
+        public InputAction @MovePlayer => m_Wrapper.m_General_MovePlayer;
+        public InputAction @MouseLook => m_Wrapper.m_General_MouseLook;
         public InputActionMap Get() { return m_Wrapper.m_General; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -293,6 +383,12 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @MoveCamera.started += instance.OnMoveCamera;
             @MoveCamera.performed += instance.OnMoveCamera;
             @MoveCamera.canceled += instance.OnMoveCamera;
+            @MovePlayer.started += instance.OnMovePlayer;
+            @MovePlayer.performed += instance.OnMovePlayer;
+            @MovePlayer.canceled += instance.OnMovePlayer;
+            @MouseLook.started += instance.OnMouseLook;
+            @MouseLook.performed += instance.OnMouseLook;
+            @MouseLook.canceled += instance.OnMouseLook;
         }
 
         private void UnregisterCallbacks(IGeneralActions instance)
@@ -315,6 +411,12 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @MoveCamera.started -= instance.OnMoveCamera;
             @MoveCamera.performed -= instance.OnMoveCamera;
             @MoveCamera.canceled -= instance.OnMoveCamera;
+            @MovePlayer.started -= instance.OnMovePlayer;
+            @MovePlayer.performed -= instance.OnMovePlayer;
+            @MovePlayer.canceled -= instance.OnMovePlayer;
+            @MouseLook.started -= instance.OnMouseLook;
+            @MouseLook.performed -= instance.OnMouseLook;
+            @MouseLook.canceled -= instance.OnMouseLook;
         }
 
         public void RemoveCallbacks(IGeneralActions instance)
@@ -340,5 +442,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         void OnGenerateFullLayout(InputAction.CallbackContext context);
         void OnZoomScreen(InputAction.CallbackContext context);
         void OnMoveCamera(InputAction.CallbackContext context);
+        void OnMovePlayer(InputAction.CallbackContext context);
+        void OnMouseLook(InputAction.CallbackContext context);
     }
 }
